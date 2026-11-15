@@ -81,6 +81,7 @@ def main():
             save()
     except RuntimeError as e:
         stop = str(e)[:120]
+        open(f'{a.data}/STOPPED', 'w').write(stop)  # 拒否されたら自動の次回起動をしない
     finally:
         save()
         tot = 0

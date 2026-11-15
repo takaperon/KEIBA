@@ -61,7 +61,7 @@ jobs:
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m "nar data"
           git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" nar-data
       - name: chain next run until done（GitHub の定時実行は遅れがちなので自分で次を起動）
-        if: always() && hashFiles('nardata/DONE') == ''
+        if: success() && hashFiles('nardata/DONE') == '' && hashFiles('nardata/STOPPED') == ''
         run: |
           curl -s -X POST -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/${{ github.repository }}/actions/workflows/backfill_nar.yml/dispatches -d '{"ref":"main"}' -w "%{http_code}\n"
