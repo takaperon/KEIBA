@@ -22,7 +22,7 @@ def cnames(html: str, prefix: str):
 
 def race_key(cname: str):
     """pw01sde10 PP YYYY KK DD RR YYYYMMDD/XX → 'YYYYMMDD-PP-RR' と各要素"""
-    m = re.match(r"pw01sde10(\d{2})(\d{4})(\d{2})(\d{2})(\d{2})(\d{8})/", cname)
+    m = re.match(r"pw01[sd]de\d\d(\d{2})(\d{4})(\d{2})(\d{2})(\d{2})(\d{8})/", cname)
     if not m:
         return None
     pp, yy, kai, day, rno, date = m.groups()

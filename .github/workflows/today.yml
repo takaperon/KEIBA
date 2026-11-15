@@ -19,10 +19,17 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: pip install -q beautifulsoup4 lxml
-      - run: TZ=Asia/Tokyo python3 scripts/today.py --out out
+      - run: TZ=Asia/Tokyo python3 scripts/today.py --out out 2>&1 | tee today.log
       - name: push
         run: |
           cd out && git init -q && git checkout -q -b today
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m today
           git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" today
+      - name: save log on failure
+        if: failure()
+        run: |
+          mkdir -p dbg && cd dbg && cp ../today.log . || true && git init -q && git checkout -q -b today-debug
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m debug
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" today-debug

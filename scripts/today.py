@@ -24,7 +24,7 @@ for r in races:
         d = jra.parse_card(f.get('accessD.html', r['cname']))
     except Exception as e:  # noqa
         print('ERR', r['cname'], e); continue
-    k = jra.race_key(r['cname'].replace('pw01dde', 'pw01sde'))
+    k = jra.race_key(r['cname'])
     out.append(dict(k, **d, cname=r['cname']))
 out.sort(key=lambda x: (x['place'], x['rno']))
 os.makedirs(a.out, exist_ok=True)
