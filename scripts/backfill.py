@@ -12,11 +12,12 @@ J = 'https://www.jra.go.jp/JRADB/'
 
 
 class Fetcher:
-    def __init__(self, budget, sleep):
+    def __init__(self, budget, sleep, max_minutes=None):
         self.budget, self.sleep, self.n = budget, sleep, 0
+        self.deadline = time.time() + max_minutes * 60 if max_minutes else None
 
     def ok(self):
-        return self.n < self.budget
+        return self.n < self.budget and (self.deadline is None or time.time() < self.deadline)
 
     def get(self, access, cname):
         self.n += 1
@@ -52,6 +53,7 @@ def main():
     ap.add_argument('--until', default=None, help='この日付(YYYYMMDD)より前のレースだけ')
     ap.add_argument('--budget', type=int, default=2400)
     ap.add_argument('--sleep', type=float, default=1.5)
+    ap.add_argument('--max-minutes', type=float, default=None, help='この時間で打ち切って保存（Actions のタイムアウト対策）')
     a = ap.parse_args()
     until = a.until or time.strftime('%Y%m%d')
     os.makedirs(f'{a.data}/races', exist_ok=True)
@@ -59,7 +61,7 @@ def main():
     st = json.load(open(sp)) if os.path.exists(sp) else {}
     st.setdefault('months', {})
     st.setdefault('errors', [])
-    f = Fetcher(a.budget, a.sleep)
+    f = Fetcher(a.budget, a.sleep, a.max_minutes)
 
     def save():
         json.dump(st, open(sp, 'w'), ensure_ascii=False, indent=0)
@@ -110,6 +112,8 @@ def main():
                 out.write(json.dumps(rec, ensure_ascii=False) + '\n')
                 done.add(r)
                 ms['done'] = sorted(done)
+                if len(done) % 50 == 0:
+                    out.flush(); save()
             out.close()
             ms['complete'] = bool(ms['srl']) and len(ms['srl_done']) == len(ms['srl']) and len(done) == len(ms['races'])
             save()

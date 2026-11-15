@@ -28,7 +28,7 @@ jobs:
       - name: run
         run: |
           set -o pipefail
-          python3 scripts/backfill.py --data data --start 202411 --budget 3600 --sleep 1.0 2>&1 | tee data/last_run.log
+          python3 scripts/backfill.py --data data --start 202411 --budget 6000 --sleep 1.0 --max-minutes 75 2>&1 | tee data/last_run.log
       - name: push
         if: always()
         run: |
