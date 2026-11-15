@@ -1,0 +1,21 @@
+name: results_today
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/results_today.py', '.github/workflows/results_today.yml']
+permissions:
+  contents: write
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q beautifulsoup4 lxml
+      - run: python3 scripts/results_today.py
+      - run: |
+          cd out && git init -q && git checkout -q -b results-today
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m r
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" results-today
