@@ -1,23 +1,22 @@
 #!/bin/bash
-# NAR-N1c: 楽天競馬のページ構成の確認。robots.txt の Crawl-Delay 60 に従い60秒間隔・最大9ページ
+# NAR-N1d: 楽天競馬の各レースページ（出馬表・単複オッズ・結果）と過去日付の確認。60秒間隔・最大8ページ
 set -u
 out=$1; mkdir -p $out/f
 UA='Mozilla/5.0 (compatible; KEIBA-personal/0.1; +https://github.com/takaperon)'
 R=https://keiba.rakuten.co.jp
 g() { curl -sSL -A "$UA" -m 30 -o "$out/f/$1" -w "%{http_code} %{size_download} $2\n" "$2" >> $out/status.txt 2>>$out/err.txt; sleep 61; }
-g top.html $R/
-grep -oE 'href="[^"]*"' $out/f/top.html | sed 's/href="//;s/"$//;s/&amp;/\&/g' | grep -E 'race_card|odds|race_performance|RACEID' | sort -u > $out/links1.txt
-n=0
-for pat in 'race_card/list' 'race_card/detail' 'odds/tanfuku' 'race_performance' 'odds'; do
-  u=$(grep -m1 "$pat" $out/links1.txt) || continue
-  [ -n "$u" ] || continue
-  case "$u" in http*) url=$u;; /*) url=$R$u;; *) url=$R/$u;; esac
-  n=$((n+1)); g "1_$n.html" "$url"
-done
-cat $out/f/1_*.html 2>/dev/null | grep -oE 'href="[^"]*"' | sed 's/href="//;s/"$//;s/&amp;/\&/g' | grep -E 'race_card|odds|race_performance|RACEID|horse' | sort -u > $out/links2.txt
-for pat in 'race_card/list/RACEID' 'odds/tanfuku/RACEID' 'race_performance/list/RACEID' 'horse_detail'; do
-  u=$(grep -m1 "$pat" $out/links2.txt) || continue
-  case "$u" in http*) url=$u;; /*) url=$R$u;; *) url=$R/$u;; esac
-  n=$((n+1)); [ $n -gt 9 ] && break; g "2_$n.html" "$url"
-done
+lk() { grep -oE 'href="[^"]*"' "$1" | sed 's/href="//;s/"$//;s/&amp;/\&/g;s/?l-id=.*//' | sort -u; }
+g card.html $R/race_card/list/RACEID/202611153230130510
+g odds.html $R/odds/tanfuku/RACEID/202611153230130510
+g perf_list.html $R/race_performance/list/RACEID/202611143230130400
+u=$(lk $out/f/perf_list.html | grep -E 'race_performance/list/RACEID/[0-9]{16}(0[1-9]|1[0-2])$' | head -1)
+[ -n "$u" ] && g perf_race.html "$u"
+echo "$u" > $out/perf_race_url.txt
+id=${u##*/}
+[ -n "$id" ] && g odds_past.html $R/odds/tanfuku/RACEID/$id
+g old_list.html $R/race_performance/list/RACEID/202411140000000000
+u2=$(lk $out/f/old_list.html | grep -E 'race_performance/list/RACEID/20241114[0-9]{8}00$' | head -1)
+echo "$u2" > $out/old_url.txt
+[ -n "$u2" ] && g old_venue.html "$u2"
+for f in $out/f/*.html; do lk $f > ${f%.html}.links.txt; done
 exit 0
