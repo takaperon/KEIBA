@@ -121,6 +121,9 @@ def main():
         save()
         tot = sum(len(m.get('done', [])) for m in st['months'].values())
         comp = sorted(k for k, m in st['months'].items() if m.get('complete'))
+        want = month_list(a.start, a.end)
+        if all(st['months'].get(m, {}).get('complete') for m in want):
+            open(f'{a.data}/DONE', 'w').write(time.strftime('%Y-%m-%d %H:%M'))
         print(f'requests={f.n} races_total={tot} complete_months={len(comp)} errors={len(st["errors"])}')
 
 

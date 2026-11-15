@@ -87,6 +87,12 @@ def main():
         for fn in os.listdir(f'{a.data}/races'):
             with gzip.open(f'{a.data}/races/{fn}', 'rt') as f:
                 tot += sum(1 for _ in f)
+        need = set()
+        dd = datetime.date.today() - datetime.timedelta(days=1)
+        while dd >= oldest:
+            need.add(dd.strftime('%Y%m%d')); dd -= datetime.timedelta(days=1)
+        if need <= done_dates:
+            open(f'{a.data}/DONE', 'w').write(time.strftime('%Y-%m-%d %H:%M'))
         print(f'requests={n_req} new_races={n_race} total_races={tot} dates_done={len(done_dates)} '
               f'oldest_done={min(done_dates) if done_dates else None} errors={len(st["errors"])} stop={stop}')
 

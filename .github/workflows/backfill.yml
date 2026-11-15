@@ -10,13 +10,14 @@ on:
     paths: ['scripts/backfill.py', 'keiba/jra.py', '.github/workflows/backfill.yml']
 permissions:
   contents: write
+  actions: write
 concurrency:
   group: backfill
   cancel-in-progress: false
 jobs:
   backfill:
     runs-on: ubuntu-latest
-    timeout-minutes: 100
+    timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
       - name: checkout data branch
@@ -28,10 +29,15 @@ jobs:
       - name: run
         run: |
           set -o pipefail
-          python3 scripts/backfill.py --data data --start 202411 --budget 6000 --sleep 1.0 --max-minutes 75 2>&1 | tee data/last_run.log
+          python3 scripts/backfill.py --data data --start 202411 --budget 20000 --sleep 1.0 --max-minutes 300 2>&1 | tee data/last_run.log
       - name: push
         if: always()
         run: |
           cd data
           git config user.name keiba-bot; git config user.email keiba-bot@users.noreply.github.com
           git add -A && { git commit -q -m "backfill" || true; } && git push -q origin data
+      - name: chain next run until done（GitHub の定時実行は遅れがちなので自分で次を起動）
+        if: always() && hashFiles('data/DONE') == ''
+        run: |
+          curl -s -X POST -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/backfill.yml/dispatches -d '{"ref":"main"}' -w "%{http_code}\n"
