@@ -1,0 +1,28 @@
+name: today
+# 開催日の出馬表（単勝オッズ・人気・近4走）を取得して today ブランチへ
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/today.py', '.github/workflows/today.yml']
+permissions:
+  contents: write
+concurrency:
+  group: today
+  cancel-in-progress: false
+jobs:
+  today:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -q beautifulsoup4 lxml
+      - run: TZ=Asia/Tokyo python3 scripts/today.py --out out
+      - name: push
+        run: |
+          cd out && git init -q && git checkout -q -b today
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m today
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" today

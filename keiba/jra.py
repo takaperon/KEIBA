@@ -144,3 +144,57 @@ def parse_odds(html: str) -> dict:
             }
     m = re.search(r'複勝（(\d)着払い）', html)
     return {'odds': out, 'fuku_places': int(m.group(1)) if m else None}
+
+
+def _margin(fin_text, pos):
+    m = re.search(r'\(([-\d.]+)\)', fin_text or '')
+    if not m:
+        return None
+    v = float(m.group(1))
+    return -v if pos == 1 else v  # 勝ち馬は2着との差をマイナス（＝先着）で
+
+
+def parse_card(html: str) -> dict:
+    """出馬表（単勝オッズ・人気・近4走つき）"""
+    s = BeautifulSoup(html, 'lxml')
+    d = parse_header(s)
+    rows = []
+    tb = s.find('table', class_='basic') or s.find('table')
+    for tr in (tb.find('tbody').find_all('tr', recursive=False) if tb and tb.find('tbody') else []):
+        num = tr.find('td', class_='num')
+        if not num or not _t(num).isdigit():
+            continue
+        hz = tr.find('td', class_='horse')
+        jk = tr.find('td', class_='jockey')
+        odds = _num(_t(hz.select_one('.odds_line .num'))) if hz else None
+        pm = re.search(r'\((\d+)', _t(hz.select_one('.pop_rank'))) if hz else None
+        past = []
+        for td in tr.find_all('td', class_='past'):
+            if not td.find(class_='date'):
+                continue
+            pl = re.search(r'\d+', _t(td.find(class_='place')))
+            mx = re.search(r'\d+', _t(td.select_one('.num .max')))
+            dist = _t(td.find(class_='dist'))
+            g = td.select_one('.r_class img')
+            f3 = re.search(r'3F\s*([\d.]+)', _t(td.find(class_='f3')))
+            pos = int(pl.group()) if pl else None
+            past.append({'date': _t(td.find(class_='date')), 'rc': _t(td.find(class_='rc')),
+                         'name': _t(td.select_one('.race_line .name')), 'grade': g.get('alt') if g else None,
+                         'pos': pos, 'field': int(mx.group()) if mx else None,
+                         'pop': int(re.search(r'\d+', _t(td.select_one('.num .pop'))).group()) if re.search(r'\d+', _t(td.select_one('.num .pop'))) else None,
+                         'dist': dist, 'going': _t(td.find(class_='condition')),
+                         'last3f': float(f3.group(1)) if f3 else None,
+                         'margin': _margin(_t(td.find(class_='fin')), pos)})
+        rows.append({'num': int(_t(num)), 'waku': _id(tr.find('td', class_='waku'), r'waku/(\d+)\.png'),
+                     'horse': _t(hz.select_one('.name')) if hz else '',
+                     'horse_id': _id(hz, r'pw01dud\d\d(\d{10})'),
+                     'odds': odds, 'pop': int(pm.group(1)) if pm else None,
+                     'record': _t(hz.select_one('.result')) if hz else '',
+                     'sire': _t(hz.select_one('.sire')).replace('父：', '') if hz else '',
+                     'trainer': _t(hz.select_one('.trainer a')) if hz else '',
+                     'sexage': _t(jk.find(class_='age')) if jk else '',
+                     'kg': _num(_t(jk.find(class_='weight')).replace('kg', '')) if jk else None,
+                     'jockey': _t(jk.select_one('.jockey a')) if jk else '',
+                     'past': past})
+    d['runners'] = rows
+    return d
