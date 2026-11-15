@@ -1,0 +1,20 @@
+name: probe_nk
+on:
+  push:
+    branches: [main]
+    paths: ['scripts/probe_nk.py', '.github/workflows/probe_nk.yml']
+permissions:
+  contents: write
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q beautifulsoup4 lxml
+      - run: mkdir -p out && python3 scripts/probe_nk.py out/structure.json
+      - run: |
+          cd out && git init -q && git checkout -q -b nk-probe
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m p
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" nk-probe
