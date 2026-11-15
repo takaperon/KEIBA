@@ -1,0 +1,37 @@
+name: backfill
+# N3: 過去約2年分の結果＋最終単複オッズを少しずつ取得（1回 3,600 リクエスト上限・1秒間隔）
+# 全月がそろったら scripts/backfill.py は何も取らずに終わる（その後このスケジュールは外す）
+on:
+  schedule:
+    - cron: '20 */3 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/backfill.py', 'keiba/jra.py', '.github/workflows/backfill.yml']
+permissions:
+  contents: write
+concurrency:
+  group: backfill
+  cancel-in-progress: false
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+      - name: checkout data branch
+        run: |
+          if git fetch origin data:data 2>/dev/null; then git worktree add data data; else git worktree add --orphan -b data data; fi
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -q beautifulsoup4 lxml
+      - name: run
+        run: |
+          set -o pipefail
+          python3 scripts/backfill.py --data data --start 202411 --budget 3600 --sleep 1.0 2>&1 | tee data/last_run.log
+      - name: push
+        if: always()
+        run: |
+          cd data
+          git config user.name keiba-bot; git config user.email keiba-bot@users.noreply.github.com
+          git add -A && { git commit -q -m "backfill" || true; } && git push -q origin data
