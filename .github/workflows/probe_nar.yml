@@ -1,0 +1,20 @@
+name: probe_nar
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/probe_nar.sh', '.github/workflows/probe_nar.yml']
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/probe_nar.sh out
+      - run: |
+          cd out && git init -q && git checkout -q -b nar-probe
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m probe
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" nar-probe
