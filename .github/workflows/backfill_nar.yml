@@ -1,6 +1,6 @@
 name: backfill_nar
 # 地方（NAR）過去2年分を netkeiba から3秒間隔で取得。
-# 公開リポジトリの間はデータをブランチに置かず Actions キャッシュにだけ保存。非公開になったら nar-data ブランチへ移す。
+# 状態（件数だけ）は nar-status ブランチへ。公開リポジトリの間はデータをブランチに置かず Actions キャッシュにだけ保存。非公開になったら nar-data ブランチへ移す。
 on:
   schedule:
     - cron: '40 */6 * * *'
@@ -13,7 +13,7 @@ permissions:
   actions: write
 concurrency:
   group: backfill_nar
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   nar:
     runs-on: ubuntu-latest
@@ -36,10 +36,18 @@ jobs:
           if git fetch origin nar-data:nar-data 2>/dev/null && [ ! -f nardata/state.json ]; then git worktree add nd nar-data && mkdir -p nardata && cp -r nd/* nardata/; fi
       - run: pip install -q beautifulsoup4 lxml
       - name: run
-        run: python3 scripts/backfill_nar.py --data nardata --max-minutes 320
+        run: |
+          M=320; [ "${{ github.event_name }}" = push ] && M=15
+          python3 scripts/backfill_nar.py --data nardata --max-minutes $M 2>&1 | tee run.log
       - name: coverage (counts only)
         if: always()
-        run: python3 scripts/nar_coverage.py nardata || true
+        run: |
+          python3 scripts/nar_coverage.py nardata > cov.txt 2>&1 || true
+          mkdir -p st && cp cov.txt st/ && tail -3 run.log > st/last_run.txt 2>/dev/null; date -u > st/at.txt
+          cd st && git init -q && git checkout -q -b nar-status
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m status
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" nar-status
       - uses: actions/cache/save@v4
         if: always()
         with:
