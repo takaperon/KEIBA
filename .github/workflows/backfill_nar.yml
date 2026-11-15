@@ -1,0 +1,54 @@
+name: backfill_nar
+# 地方（NAR）過去2年分を netkeiba から3秒間隔で取得。
+# 公開リポジトリの間はデータをブランチに置かず Actions キャッシュにだけ保存。非公開になったら nar-data ブランチへ移す。
+on:
+  schedule:
+    - cron: '40 */6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/backfill_nar.py', 'keiba/nk.py', '.github/workflows/backfill_nar.yml']
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: backfill_nar
+  cancel-in-progress: false
+jobs:
+  nar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: nardata
+          key: nar-data-${{ github.run_id }}
+          restore-keys: nar-data-
+      - name: private?
+        id: vis
+        run: |
+          p=$(curl -s -H "Authorization: Bearer ${{ github.token }}" https://api.github.com/repos/${{ github.repository }} | python3 -c "import json,sys;print(str(json.load(sys.stdin).get('private')).lower())")
+          echo "private=$p" >> $GITHUB_OUTPUT; echo "private=$p"
+      - name: restore from branch if private
+        if: steps.vis.outputs.private == 'true'
+        run: |
+          if git fetch origin nar-data:nar-data 2>/dev/null && [ ! -f nardata/state.json ]; then git worktree add nd nar-data && mkdir -p nardata && cp -r nd/* nardata/; fi
+      - run: pip install -q beautifulsoup4 lxml
+      - name: run
+        run: python3 scripts/backfill_nar.py --data nardata --max-minutes 320
+      - name: coverage (counts only)
+        if: always()
+        run: python3 scripts/nar_coverage.py nardata || true
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: nardata
+          key: nar-data-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: push to private branch (only when the repo is private)
+        if: always() && steps.vis.outputs.private == 'true'
+        run: |
+          rm -rf nd2 && mkdir nd2 && cp -r nardata/* nd2/ && cd nd2 && git init -q && git checkout -q -b nar-data
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m "nar data"
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" nar-data
