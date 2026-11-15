@@ -3,7 +3,7 @@ name: backfill
 # 全月がそろったら scripts/backfill.py は何も取らずに終わる（その後このスケジュールは外す）
 on:
   schedule:
-    - cron: '20 */3 * * *'
+    - cron: '5 * * * *'
   workflow_dispatch:
   push:
     branches: [main]
