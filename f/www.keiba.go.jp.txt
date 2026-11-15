@@ -1,0 +1,22 @@
+# Google検索でクロール・インデックスできるように許可する。
+# GooglebotはCrawl-delayを無視するため、必要な場合はrobots.txt以外で制御する。
+User-agent: Googlebot
+Disallow:
+
+User-agent: *
+Crawl-delay: 10
+
+# PHP/DB負荷が高い動的ページ。botは公開・静的コンテンツ中心に誘導し、
+# パラメータ空間の広いページをクロールさせない。
+Disallow: /KeibaWeb/TodayRaceInfo/
+Disallow: /KeibaWeb/DataRoom/
+Disallow: /KeibaWeb/DataDownload/
+Disallow: /KeibaWeb/MonthlyConveneInfo/
+Disallow: /KeibaWeb_IPAT/
+Disallow: /KeibaWebSP/TodayRaceInfo/
+Disallow: /KeibaWebSP/DataRoom/
+Disallow: /KeibaWebSP/MonthlyConveneInfo/
+
+# 機械/API向けエンドポイントはクロール対象にしない。
+Disallow: /wp-json/
+Disallow: /xmlrpc.php

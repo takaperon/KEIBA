@@ -1,0 +1,21 @@
+﻿
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<HTML>
+<HEAD>
+<TITLE></TITLE>
+</HEAD>
+<BODY bgcolor="#ffffff">
+
+<img src="http://www.keibabook.co.jp/images_book/index/header/logo.png">
+
+<p>
+競馬ブックのURLは、<a href="https://p.keibabook.co.jp/">https://p.keibabook.co.jp/</a> に変更になりました。
+</p>
+
+<p>
+<a href="https://p.keibabook.co.jp/">新サイトへ</a>
+</p>
+
+
+</BODY>
+</HTML>

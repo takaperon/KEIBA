@@ -1,0 +1,22 @@
+404 196 db.netkeiba.com
+404 196 db.netkeiba.com (browser UA)
+404 196 race.netkeiba.com
+404 196 race.netkeiba.com (browser UA)
+200 755 www.jbis.or.jp
+200 538 www.keibalab.jp
+200 7681 umanity.jp
+403 384 www.oddspark.com
+403 384 www.oddspark.com (browser UA)
+403 101 www.spat4.jp
+403 101 www.spat4.jp (browser UA)
+403 101 www.nankankeiba.com
+403 101 www.nankankeiba.com (browser UA)
+200 816 www.keiba.go.jp
+000 0 keiba.yahoo.co.jp
+000 0 keiba.yahoo.co.jp (browser UA)
+404 8593 sports.yahoo.co.jp
+404 6903 sports.yahoo.co.jp (browser UA)
+404 433 www.keibabook.co.jp
+404 433 www.keibabook.co.jp (browser UA)
+200 83 p.keibabook.co.jp
+200 wayback

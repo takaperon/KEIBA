@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+        content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no,shrink-to-fit=no">
+  <title>エラーページ - スポーツナビ</title>
+  <meta name="description" content="指定されたページは存在しません。">
+  <meta name="keywords" content="スポーツ,速報,野球,サッカー,競馬">
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no-cache"/>
+  <meta http-equiv="expires" content="0"/>
+  <meta property="og:site_name" content="スポーツナビ">
+  <meta property="og:title" content="エラーページ - スポーツナビ">
+  <meta property="og:description" content="指定されたページは存在しません。">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://s.yimg.jp/images/sports/promo/pc/facebook/other.png">
+  <link rel="shortcut icon" href="https://s.yimg.jp/images/sports/common/favicon/favicon.ico">
+
+  <link rel="stylesheet" href="https://s.yimg.jp/images/sports/all_device/sp/hosted/css/yjsmhStyle.css" type="text/css"
+        media="all">
+  <link rel="stylesheet" href="https://s.yimg.jp/yui/jp/smh/sp/2.2.2/css/yjsmh_sports.css">
+  <link href="/css/sp/style.css?1793146678" rel="stylesheet"/>
+
+  <script src="https://s.yimg.jp/l/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://s.yimg.jp/images/sports/all_device/sp/hosted/hostedHamburgerMenu.js"></script>
+</head>
+
+<body>
+<div id="wrapper" class="yf-wrapper">
+
+  
+  
+    
+  <div id="h_nav_er" class="hamNavSwitch target_modules">
+    <div id="yjsmhWrapper">
+      <div id="yjsmhMenuArea">
+        <span class="yjsmhMenuAreaClose"></span>
+      </div>
+      <header id="yjsmhHeader" class="yjsmhHeaderDefault yjsmhStsLogin">
+        <div id="yjsmhLogo">
+          <h1 title="スポーツナビ">
+            <a href="https://sports.yahoo.co.jp/" id="yjsmhSLogo">スポーツナビ</a>
+          </h1>
+          <ul class="yjsmhHeaderMenu">
+            <li><a href="https://m.yahoo.co.jp/" id="yjsmhYlogo">Yahoo! JAPAN</a></li>
+            <li class="yjsmhContentsMenu">
+              <a class="yjsmhHeaderOpen cl-noclick-log" id="yjsmhOpenButton">
+                <div>
+                  <p></p>
+                </div>
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div class="yjsmhLoginArea" style="display:none;">
+          <ul>
+            <a href="https://login.yahoo.co.jp/config/login?.src=sports&amp;.done=https%3a%2f%2fm.sports.yahoo.co.jp" id="yjsmhLoginExt"></a>
+          </ul>
+        </div>
+      </header>
+
+      <nav id="yjsmhMenu">
+        <div id="yjsmhMenuWrp">
+          <ul id="yjsmhInfo"></ul>
+        </div>
+      </nav>
+    </div>
+    <script type="text/javascript">
+      /*<![CDATA[*/
+      (function(d, t) {
+        var s = d.getElementsByTagName(t)[0],
+          n = d.createElement(t);
+        n.id = 'yjsmhScript';
+        n.src = 'https://s.yimg.jp/images/sports/all_device/sp/hosted/smh.js';
+        n.setAttribute('data-s', '');
+        s.parentNode.insertBefore(n, s);
+      }(document, 'script')); /*]]>*/
+    </script>
+  </div>
+
+  
+  
+
+  <main class="yf-content__error">
+    <div id="link" class="target_modules">
+      <section class="yf-modError">
+        <div class="yf-error">
+          <div class="yf-error__content">
+            <h2 class="yf-error__title">申し訳ございません。指定されたページは存在しません。</h2>
+          </div>
+          <div class="yf-error__content">
+            <p class="yf-error__text">情報は既に削除されているか、まだ提供を開始していない可能性があります。</p>
+          </div>
+          <p class="yf-error__link">
+            <a href="https://sports.yahoo.co.jp/">スポーツナビトップへ</a>
+          </p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  
+  
+    
+    <div id="footer" class="footerDefault">
+      <div id="foot_sns" class="target_modules">
+        <div class="footerSns">
+          <ul>
+            <li class="fb">
+              <a href="https://www.facebook.com/sportsnavi">
+                <dt>Facebook</dt>
+                <dd>スポーツナビ<br>公式ページ</dd>
+              </a>
+            </li>
+            <li class="tw">
+              <a href="https://twitter.com/sportsnavi">
+                <dt>X(旧Twitter)</dt>
+                <dd>スポーツナビ<br>公式アカウント</dd>
+              </a>
+            </li>
+            <li class="yt">
+              <a href="https://yahoo.jp/3r1mOs">
+                <dt>YouTube</dt>
+                <dd>スポーツナビ<br>公式チャンネル</dd>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div id="sf" class="target_modules">
+        <div class="footerInner">
+          <ul class="commonLink">
+            <li><a href="https://sports.yahoo.co.jp/">スポーツナビ</a></li>
+            <li><a href="https://m.yahoo.co.jp">Yahoo! JAPAN</a></li>
+          </ul>
+          <ul class="subLink">
+            <li><a href="https://www.lycorp.co.jp/ja/company/privacypolicy/">プライバシーポリシー</a></li>
+            <li><a href="https://privacy.lycorp.co.jp/ja/">プライバシーセンター</a></li>
+          </ul>
+          <ul class="subLink">
+            <li><a href="https://www.lycorp.co.jp/ja/company/terms/">規約</a></li>
+            <li><a href="https://sportsnavi.co.jp/">会社概要</a></li>
+          </ul>
+          <ul class="subLink">
+            <li><a href="https://support.yahoo-net.jp/SccSports/s/article/H000009539">免責事項</a></li>
+            <li><a href="https://sportsnavi.co.jp/recruit">スタッフ募集</a></li>
+          </ul>
+          <ul class="subLink">
+            <li><a href="https://support.yahoo-net.jp/voc/s/sports">ご意見・ご要望</a></li>
+            <li><a href="https://support.yahoo-net.jp/SccSports/s/">ヘルプ</a></li>
+          </ul>
+          <p><small>(C) Sportsnavi</small></p>
+          <p><small>(C) LY Corporation</small></p>
+        </div>
+      </div>
+    </div>
+  
+  
+  
+
+</div>
+
+<script src="https://s.yimg.jp/images/ds/cl/ds-custom-logger-1.1.0.min.js"></script>
+<script>
+  /*<![CDATA[*/
+  (function() {
+    const customLogger = new DSCustomLogger.CustomLogger();
+    const customLoggerCore = customLogger.targetClass()
+    .setPageData({
+      service: "sports",
+      pagetype: "error",
+      conttype: "error",
+      cat_path: "error",
+      apptype: "web",
+      opttype: "smartphone"
+    })
+    .initCustomLoggerCore();
+
+    document.getElementById('wrapper').addEventListener('yjsmhInitialized', function(e) { //サービスメニューが生成されたとき
+      customLoggerCore.refreshModule("h_nav_er", false)
+    }, false);
+  })();
+  /*]]>*/
+</script>
+
+</body>
+</html>

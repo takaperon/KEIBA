@@ -1,0 +1,288 @@
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: AhrefsSiteAudit
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: Barkrowler
+Disallow: /
+
+User-agent: DataForSeoBot
+Disallow: /
+
+User-agent: proximic
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Amzn-SearchBot
+Disallow: /
+
+User-agent: Amzn-User
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: BaiduSpider
+Disallow: /
+
+User-agent: ImagesiftBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Claude-User
+Disallow: /
+
+User-agent: Claude-SearchBot
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /
+
+User-agent: meta-webindexer
+Disallow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: BingPreview
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: TikTokSpider
+Disallow: /
+
+User-agent: Yandex
+Disallow: /
+
+User-agent: Applebot
+Disallow: /
+
+User-agent: SERankingBacklinksBot
+Disallow: /
+
+User-agent: trendictionbot
+Disallow: /
+
+User-agent: AionBot
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: ExaSearchBot
+Disallow: /
+
+User-agent: SofyaBot
+Disallow: /
+
+User-agent: keiba-ai
+Disallow: /
+
+#rc
+
+User-agent: *
+Crawl-delay: 5
+Disallow: /racedata/increment_popularity_count.php
+Disallow: /increment_popularity_count.php
+Disallow: /increment_ad_show_count.php
+Disallow: /topc.php
+Disallow: /tosp.php
+Disallow: /*coliseum_view.php
+Disallow: /*race_view.php
+Disallow: /horse_03.php
+Disallow: /horse_04.php
+Disallow: /horse_05.php
+Disallow: /horse_06.php
+Disallow: /horse_07.php
+Disallow: /horse_08.php
+Disallow: /racecard_analysis_01.php
+Disallow: /racecard_analysis_02.php
+Disallow: /racecard_analysis_03.php
+Disallow: /racecard_analysis_04.php
+Disallow: /racecard_analysis_05.php
+Disallow: /racecard_odds_02.php
+Disallow: /racecard_odds_03.php
+Disallow: /racecard_odds_04.php
+Disallow: /racecard_odds_05.php
+Disallow: /racecard_odds_06.php
+Disallow: /racecard_result_past.php
+Disallow: /racedata/race_15.php
+Disallow: /racedata/race_16.php
+Disallow: /racedata/race_17.php
+Disallow: /racedata/race_18.php
+Disallow: /racedata/race_19.php
+Disallow: /racedata/race_19_1.php
+Disallow: /racedata/race_20.php
+Disallow: /racedata/race_20_1.php
+Disallow: /racedata/race_28.php
+Disallow: /racedata/race_29.php
+Disallow: /racedata/race_8_1.php
+Disallow: /racedata/race_8_2.php
+Disallow: /racedata/race_8_3.php
+Disallow: /racedata/race_8_4.php
+Disallow: /racedata/race_8_5.php
+Disallow: /racedata/race_8_6.php
+Disallow: /racedata/race_8_7.php
+Disallow: /racedata/race_8_u.php
+Disallow: /racedata/race_9.php
+Disallow: /racedata/race_training.php
+Disallow: /en/racedata/race_15.php
+Disallow: /en/racedata/race_16.php
+Disallow: /en/racedata/race_17.php
+Disallow: /en/racedata/race_18.php
+Disallow: /en/racedata/race_19.php
+Disallow: /en/racedata/race_19_1.php
+Disallow: /en/racedata/race_20.php
+Disallow: /en/racedata/race_20_1.php
+Disallow: /en/racedata/race_28.php
+Disallow: /en/racedata/race_29.php
+Disallow: /en/racedata/race_8_1.php
+Disallow: /en/racedata/race_8_2.php
+Disallow: /en/racedata/race_8_3.php
+Disallow: /en/racedata/race_8_4.php
+Disallow: /en/racedata/race_8_5.php
+Disallow: /en/racedata/race_8_6.php
+Disallow: /en/racedata/race_8_7.php
+Disallow: /en/racedata/race_8_u.php
+Disallow: /en/racedata/race_9.php
+Disallow: /en/racedata/race_training.php
+Disallow: /racedata/db/horse_2.php
+Disallow: /racedata/db/horse_7.php
+Disallow: /racedata/db/horse_8.php
+Disallow: /racedata/db/horse_9.php
+Disallow: /racedata/db/horse_board.php
+Disallow: /racedata/db/horse_column.php
+Disallow: /racedata/db/horse_memo.php
+Disallow: /racedata/db/horse_news.php
+Disallow: /racedata/db/horse_pedigree.php
+Disallow: /racedata/db/horse_photo.php
+Disallow: /racedata/db/horse_record.php
+Disallow: /racedata/db/horse_reviews.php
+Disallow: /racedata/db/horse_sapuri.php
+Disallow: /racedata/db/horse_time.php
+Disallow: /racedata/db/horse_trainer.php
+Disallow: /racedata/db/horse_weight.php
+Disallow: /racedata/db/horse_year.php
+Disallow: /sp/nar/horse_03.php
+Disallow: /sp/nar/horse_04.php
+Disallow: /sp/nar/horse_05.php
+Disallow: /sp/nar/horse_06.php
+Disallow: /sp/nar/horse_07.php
+Disallow: /sp/nar/horse_08.php
+Disallow: /sp/nar/racecard_analysis_01.php
+Disallow: /sp/nar/racecard_analysis_02.php
+Disallow: /sp/nar/racecard_analysis_03.php
+Disallow: /sp/nar/racecard_analysis_04.php
+Disallow: /sp/nar/racecard_analysis_05.php
+Disallow: /sp/nar/racecard_result_past.php
+Disallow: /sp/racedata/race_28.php
+Disallow: /sp/racedata/race_29.php
+Disallow: /sp/racedata/race_9.php
+Disallow: /sp/racedata/race_training.php
+Disallow: /en/racedata/db/horse_2.php
+Disallow: /en/racedata/db/horse_7.php
+Disallow: /en/racedata/db/horse_8.php
+Disallow: /en/racedata/db/horse_9.php
+Disallow: /en/racedata/db/horse_board.php
+Disallow: /en/racedata/db/horse_column.php
+Disallow: /en/racedata/db/horse_memo.php
+Disallow: /en/racedata/db/horse_news.php
+Disallow: /en/racedata/db/horse_pedigree.php
+Disallow: /en/racedata/db/horse_photo.php
+Disallow: /en/racedata/db/horse_record.php
+Disallow: /en/racedata/db/horse_reviews.php
+Disallow: /en/racedata/db/horse_sapuri.php
+Disallow: /en/racedata/db/horse_time.php
+Disallow: /en/racedata/db/horse_trainer.php
+Disallow: /en/racedata/db/horse_weight.php
+Disallow: /en/racedata/db/horse_year.php
+Disallow: /sp/racedata/db/horse_2.php
+Disallow: /sp/racedata/db/horse_7.php
+Disallow: /sp/racedata/db/horse_8.php
+Disallow: /sp/racedata/db/horse_9.php
+Disallow: /sp/racedata/db/horse_board.php
+Disallow: /sp/racedata/db/horse_column.php
+Disallow: /sp/racedata/db/horse_memo.php
+Disallow: /sp/racedata/db/horse_news.php
+Disallow: /sp/racedata/db/horse_pedigree.php
+Disallow: /sp/racedata/db/horse_photo.php
+Disallow: /sp/racedata/db/horse_record.php
+Disallow: /sp/racedata/db/horse_reviews.php
+Disallow: /sp/racedata/db/horse_sapuri.php
+Disallow: /sp/racedata/db/horse_time.php
+Disallow: /sp/racedata/db/horse_trainer.php
+Disallow: /sp/racedata/db/horse_weight.php
+Disallow: /sp/racedata/db/horse_year.php
+Disallow: /racedata/race_mark.php
+Disallow: /racedata/db/horse_10.php
+Disallow: /sp/racedata/race_mark.php
+Disallow: /sp/racedata/db/horse_10.php
+Disallow: /sp/racedata/race_8_1.php
+Disallow: /sp/racedata/race_8_2.php
+Disallow: /sp/racedata/race_8_3.php
+Disallow: /sp/racedata/race_8_4.php
+Disallow: /sp/racedata/race_8_5.php
+Disallow: /sp/racedata/race_8_6.php
+Disallow: /sp/racedata/race_8_7.php
+Disallow: /sp/racedata/race_15.php
+Disallow: /sp/racedata/race_16.php
+Disallow: /sp/racedata/race_17.php
+Disallow: /sp/racedata/race_18.php
+Disallow: /sp/racedata/race_19.php
+Disallow: /sp/racedata/race_20.php
+Disallow: /sp/nar/racecard_odds_02.php
+Disallow: /sp/nar/racecard_odds_03.php
+Disallow: /sp/nar/racecard_odds_04.php
+Disallow: /sp/nar/racecard_odds_05.php
+Disallow: /sp/nar/racecard_odds_06.php
+Disallow: /en/racedata/race_mark.php
+Disallow: /en/racedata/db/horse_10.php
+Disallow: /nar/horse_03.php
+Disallow: /nar/horse_04.php
+Disallow: /nar/horse_05.php
+Disallow: /nar/horse_06.php
+Disallow: /nar/horse_07.php
+Disallow: /nar/horse_08.php
+Disallow: /nar/racecard_analysis_01.php
+Disallow: /nar/racecard_analysis_02.php
+Disallow: /nar/racecard_analysis_03.php
+Disallow: /nar/racecard_analysis_04.php
+Disallow: /nar/racecard_analysis_05.php
+Disallow: /nar/racecard_result_past.php
+Disallow: /nar/racecard_odds_02.php
+Disallow: /nar/racecard_odds_03.php
+Disallow: /nar/racecard_odds_04.php
+Disallow: /nar/racecard_odds_05.php
+Disallow: /nar/racecard_odds_06.php
+Disallow: /nar/increment_popularity_count.php
