@@ -1,0 +1,45 @@
+name: nar_analyze
+# 地方の検証。キャッシュのデータで集計し、集計値だけを nar-status ブランチに置く（生データは出さない）
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/nar_*.py', 'keiba/*.py', '.github/workflows/nar_analyze.yml']
+permissions:
+  contents: write
+concurrency:
+  group: nar_analyze
+  cancel-in-progress: true
+jobs:
+  a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: nardata
+          key: nar-data-none
+          restore-keys: nar-data-
+      - name: fallback to private branch
+        run: |
+          if [ ! -f nardata/state.json ] && git fetch origin nar-data:nar-data 2>/dev/null; then git worktree add nd nar-data && mkdir -p nardata && cp -r nd/* nardata/; fi
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -q numpy scipy
+      - name: analyses (aggregates only)
+        run: |
+          mkdir -p st
+          for s in scripts/nar_*.py; do
+            n=$(basename $s .py); [ $n = nar_coverage ] && continue
+            python3 $s nardata > st/$n.txt 2>&1 || echo "FAILED" >> st/$n.txt
+          done
+          python3 scripts/nar_coverage.py nardata > st/cov.txt 2>&1 || true
+          date -u > st/analyzed_at.txt
+      - name: push aggregates
+        run: |
+          git fetch origin nar-status:nar-status 2>/dev/null && git worktree add ns nar-status || { mkdir ns && cd ns && git init -q && git checkout -q -b nar-status && cd ..; }
+          cp st/* ns/ && cd ns
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m analyze || true
+          git push -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:nar-status
