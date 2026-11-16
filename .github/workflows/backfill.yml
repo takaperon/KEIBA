@@ -1,9 +1,8 @@
 name: backfill
+# 2026-11-16 2年分そろったので定時実行は外した（手動・push でのみ動く）
 # N3: 過去約2年分の結果＋最終単複オッズを少しずつ取得（1回 3,600 リクエスト上限・1秒間隔）
 # 全月がそろったら scripts/backfill.py は何も取らずに終わる（その後このスケジュールは外す）
 on:
-  schedule:
-    - cron: '5 * * * *'
   workflow_dispatch:
   push:
     branches: [main]
