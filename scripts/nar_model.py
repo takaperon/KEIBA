@@ -24,6 +24,7 @@ for fn in sorted(os.listdir(f'{D}/races')):
 races = sorted(races.values(), key=lambda r: (r['date'], r['post_time'] or '', r['place'], r['rno']))
 RACE = {r['id']: r for r in races}
 std = NF.build_standards(races, TRAIN_END)
+NF.build_variants(races, std)
 rows = NF.build(races, std)
 df = pd.DataFrame([dict(x['f'], race=x['race'], date=x['date'], place=x['place'], num=x['num'], pos=x['pos'], tan=x['tan'], pop=x['pop']) for x in rows])
 df['num_'] = df['num']

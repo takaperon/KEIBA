@@ -54,8 +54,7 @@ def build_standards(races, until):
     return std
 
 
-def figure(r, h, std):
-    """走破タイムの指数：基準より1kmあたり何秒速いか（大きいほど良い）"""
+def raw_figure(r, h, std):
     t = tsec(h.get('time'))
     if not t or not r.get('distance'):
         return None
@@ -65,8 +64,34 @@ def figure(r, h, std):
     return (s - t) / (r['distance'] / 1000)
 
 
+VARIANT = {}
+
+
+def build_variants(races, std):
+    """その日・その場の全完走馬の生指数の中央値＝その日の馬場の速さ。過去走の指数を作るときだけ使う（当日の予測には使わない）"""
+    acc = collections.defaultdict(list)
+    for r in races:
+        for h in r['runners']:
+            if h.get('pos'):
+                f = raw_figure(r, h, std)
+                if f is not None:
+                    acc[(r['date'], r['place'])].append(f)
+    VARIANT.clear()
+    for k, v in acc.items():
+        if len(v) >= 20:
+            v.sort(); VARIANT[k] = v[len(v) // 2]
+
+
+def figure(r, h, std):
+    """走破タイムの指数：基準より1kmあたり何秒速いか（大きいほど良い）。日ごとの馬場差を引く"""
+    f = raw_figure(r, h, std)
+    if f is None:
+        return None
+    return f - VARIANT.get((r['date'], r['place']), 0.0)
+
+
 GROUPS = {
-    'G1_基礎能力': ['fig_best', 'fig_mean5', 'beaten_mean5', 'pospct_mean5'],
+    'G1_基礎能力': ['fig_best', 'fig_mean5', 'beaten_mean5', 'pospct_mean5', 'opp_mean5', 'fig_top2of5'],
     'G2_直近調子': ['fig_last', 'fig_trend', 'pospct_last', 'days_since', 'n_runs'],
     'G3_距離適性': ['dist_fit', 'dist_diff_last', 'dist_runs'],
     'G4_コース適性': ['venue_fit', 'venue_runs'],
@@ -99,6 +124,8 @@ def build(races, std):
             c1 = mean([x['c1'] for x in hs[-5:]])
             if c1 is not None and c1 <= 0.25:
                 fronts += 1
+        pre = [mean([x['fig'] for x in hist.get(h.get('horse_id'), [])[-5:]]) for h in r['runners']]
+        opp = mean(pre)
         res_win = None
         for h in r['runners']:
             if h.get('pos') == 1:
@@ -118,6 +145,9 @@ def build(races, std):
             f['fig_best'] = max([x for x in figs if x is not None], default=None)
             f['fig_mean5'] = mean(figs)
             f['beaten_mean5'] = mean([x['beaten'] for x in last5])
+            f['opp_mean5'] = mean([x.get('opp') for x in last5])
+            fs = sorted([x for x in figs if x is not None], reverse=True)
+            f['fig_top2of5'] = mean(fs[:2]) if fs else None
             f['pospct_mean5'] = mean([x['pospct'] for x in last5])
             f['fig_last'] = hs[-1]['fig'] if hs else None
             f['fig_trend'] = (hs[-1]['fig'] - f['fig_mean5']) if hs and hs[-1]['fig'] is not None and f['fig_mean5'] is not None else None
@@ -181,7 +211,7 @@ def build(races, std):
                 'cl': (cs[-1] - 1) / max(1, field - 1) if cs else None,
                 'gain': ((cs[-1] - h['pos']) / max(1, field - 1)) if cs and h.get('pos') else None,
                 'l3rel': (h['last3f'] - l3med) if h.get('last3f') and l3med else None,
-                'hw': h.get('hw'), 'kg': h.get('kg'), 'cls': cls})
+                'hw': h.get('hw'), 'kg': h.get('kg'), 'cls': cls, 'opp': opp})
             t2 = tr[h.get('trainer')]
             t2[0] += 1
             if h.get('pos') == 1:
