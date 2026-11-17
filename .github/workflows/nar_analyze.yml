@@ -13,7 +13,7 @@ concurrency:
 jobs:
   a:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache/restore@v4
@@ -26,7 +26,7 @@ jobs:
           if [ ! -f nardata/state.json ] && git fetch origin nar-data:nar-data 2>/dev/null; then git worktree add nd nar-data && mkdir -p nardata && cp -r nd/* nardata/; fi
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - run: pip install -q numpy scipy
+      - run: pip install -q numpy scipy pandas scikit-learn lightgbm
       - name: analyses (aggregates only)
         run: |
           mkdir -p st
