@@ -6,10 +6,11 @@ on:
     - cron: '20 3 * * *'
     - cron: '20 6 * * *'
     - cron: '20 9 * * *'
+    - cron: '20 12 * * *'
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['scripts/app_data.py', 'keiba/nk.py', '.github/workflows/app_data.yml']
+    paths: ['scripts/app_data.py', 'scripts/app_day.txt', 'keiba/nk.py', '.github/workflows/app_data.yml']
 permissions:
   contents: write
 concurrency:
@@ -26,6 +27,11 @@ jobs:
           path: nardata
           key: nar-data-none
           restore-keys: nar-data-
+      - uses: actions/cache/restore@v4
+        with:
+          path: oddsdata
+          key: nar-odds-none
+          restore-keys: nar-odds-
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: pip install -q numpy pandas scikit-learn lightgbm beautifulsoup4 lxml

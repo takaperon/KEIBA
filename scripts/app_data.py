@@ -16,6 +16,10 @@ UA = 'Mozilla/5.0 (compatible; KEIBA-personal/0.1; +https://github.com/takaperon
 JST = datetime.timezone(datetime.timedelta(hours=9))
 now = datetime.datetime.now(JST)
 day = now.strftime('%Y%m%d')
+_fix = os.path.join(os.path.dirname(__file__), 'app_day.txt')  # 検証用：過去の日付で作る
+if os.path.exists(_fix):
+    day = open(_fix).read().strip()
+    now = datetime.datetime(int(day[:4]), int(day[4:6]), int(day[6:]), 23, 59, tzinfo=JST)
 _last = [0.0]
 
 
@@ -107,7 +111,47 @@ try:
                                   'ev': round(pw * h['tan'], 2) if pw and h.get('tan') else None,
                                   'runs': int(x['n_runs']) if x.get('n_runs') == x.get('n_runs') and x.get('n_runs') is not None else 0})
         rr['verdict'] = '見送り'
+        rr['id'] = r['id']
         races.append(rr)
+    # 締切前オッズの動き（collect_nar の記録から）
+    snaps = {}
+    fn = f'oddsdata/odds/{day}.jsonl.gz'
+    if os.path.exists(fn):
+        with gzip.open(fn, 'rt') as f:
+            for l in f:
+                x = json.loads(l)
+                snaps[(x['race_id'], x['mark'])] = x['win']
+    def oo(rid, mk, num):
+        w = snaps.get((rid, mk)) or {}
+        v = w.get(f'{num:02d}') or w.get(str(num))
+        try:
+            return float(v[0])
+        except Exception:  # noqa
+            return None
+    for rr in races:
+        for h in rr['runners']:
+            h['o30'], h['o10'], h['o2'], h['ofinal'] = (oo(rr['id'], m, h['num']) for m in (30, 10, 2, -3))
+            h['mv10_2'] = round(h['o2'] / h['o10'] - 1, 3) if h['o2'] and h['o10'] else None
+            h['mv30_2'] = round(h['o2'] / h['o30'] - 1, 3) if h['o2'] and h['o30'] else None
+        rr['has_moves'] = any(h['mv10_2'] is not None for h in rr['runners'])
+    # 終わったレースの結果（db.netkeiba の結果ページ）
+    for rr in races:
+        try:
+            pt = rr.get('post_time') or '99:99'
+            if now.strftime('%H:%M') < (datetime.datetime.strptime(pt, '%H:%M') + datetime.timedelta(minutes=15)).strftime('%H:%M'):
+                continue
+            res = nk.parse_race(nk.decode(get(f'https://db.netkeiba.com/race/{rr["id"]}/')), rr['id'])
+            if not res['runners'] or not any(h.get('pos') for h in res['runners']):
+                continue
+            pos = {h['num']: h for h in res['runners']}
+            for h in rr['runners']:
+                x = pos.get(h['num']) or {}
+                h['pos'] = x.get('pos'); h['pos_text'] = x.get('pos_text'); h['final_tan'] = x.get('tan')
+            rr['payouts'] = {k: v for k, v in res['payouts'].items() if k in ('単勝', '複勝', 'ワイド', '馬連', '三連複', '三連単')}
+        except Exception as e:  # noqa
+            print('result ERR', rr['id'], e)
+    for rr in races:
+        rr.pop('id', None)
     out['modes']['chiho'] = races
     out['notes']['chiho'] = ('独自指数 v2（オッズ不使用・過去2年で学習）。テスト1年で3着以内AUC0.79・確率の当たり具合は良好だが、'
                              'EV買いの回収率は64〜75%で100%に届かず、モデルと市場がずれた馬は市場どおりの結果だった。'
@@ -135,6 +179,25 @@ try:
                                        'score': x['ps_idx'], 'p_place': None, 'p_win': None, 'fair': None, 'ev': None,
                                        'runs': len(x.get('past') or []), 'cancel': False} for x in d['runners']]})
     races.sort(key=lambda r: (r['place_name'], r['rno']))
+    try:
+        st = jra.decode(get('https://www.jra.go.jp/JRADB/accessS.html', b'cname=pw01sli00/AF'))
+        for c in [c for c in jra.cnames(st, 'pw01srl') if c[-11:-3] == day]:
+            h = jra.decode(get('https://www.jra.go.jp/JRADB/accessS.html', ('cname=' + c).encode()))
+            for rc in jra.cnames(h, 'pw01sde'):
+                if rc[-11:-3] != day:
+                    continue
+                k = jra.race_key(rc)
+                rr = next((x for x in races if x['place_name'] == k['place_name'] and x['rno'] == k['rno']), None)
+                if not rr:
+                    continue
+                res = jra.parse_result(jra.decode(get('https://www.jra.go.jp/JRADB/accessS.html', ('cname=' + rc).encode())))
+                pos = {x['num']: x for x in res['runners']}
+                for hh in rr['runners']:
+                    x = pos.get(hh['num']) or {}
+                    hh['pos'] = x.get('pos'); hh['pos_text'] = x.get('pos_text')
+                rr['payouts'] = {k2: v for k2, v in res['payouts'].items() if k2 in ('単勝', '複勝', 'ワイド', '馬連', '3連複', '3連単')}
+    except Exception as e:  # noqa
+        print('jra result ERR', e)
     out['modes']['chuo'] = races
     out['notes']['chuo'] = '中央の独自指数は検証前。表示は暫定指数（近4走の着差×レースの格、未検証）。推奨買い目は出さない。'
 except Exception as e:  # noqa

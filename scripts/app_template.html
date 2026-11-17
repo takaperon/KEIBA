@@ -35,6 +35,12 @@ td{padding:7px 2px;border-bottom:1px solid var(--line);vertical-align:middle}
 .r{text-align:right;white-space:nowrap}.pop{color:var(--mut);font-size:10.5px}
 .sc{font-weight:800}.s1{color:var(--ac)}
 tr.cx{opacity:.35}
+tr.mvA{background:linear-gradient(90deg,rgba(255,77,141,.28),transparent 85%)}tr.mvB{background:linear-gradient(90deg,rgba(255,176,32,.20),transparent 85%)}
+.mv{font-weight:800;font-size:11px}.mvA .mv{color:var(--hot)}.mvB .mv{color:var(--warn)}.up{color:#6fa8ff}
+.ps{display:inline-block;min-width:22px;padding:1px 5px;border-radius:6px;font-weight:800;font-size:12px;background:#2a3344;color:var(--tx);text-align:center}
+.ps.p1{background:#f4d03f;color:#111}.ps.p2{background:#cfd6e2;color:#111}.ps.p3{background:#d08a4a;color:#111}
+.pay{margin-top:10px;border-top:1px solid var(--line);padding-top:8px;font-size:12.5px}.pay div{display:flex;justify-content:space-between;padding:2px 0}.pay b{color:var(--mut);font-weight:600;width:56px}
+.leg{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--mut);margin-top:6px}.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 .lg{color:var(--mut);font-size:11.5px;margin-top:8px}
 .empty{color:var(--mut);text-align:center;padding:40px 0}
 </style></head><body>
@@ -46,7 +52,9 @@ const D=/*DATA*/null;
 const WC=['','#f2f2f2','#222','#e0303b','#2f6fe0','#f4d03f','#2fae5a','#ff8c2e','#ff6fb1'];
 const WT=['','#111','#fff','#fff','#fff','#111','#fff','#111','#111'];
 let mode='chiho',place=null,rno=null,sk='num';
-const SK={num:h=>h.num,odds:h=>h.odds,mkt:h=>h.mkt_p,score:h=>h.score,pp:h=>h.p_place,fair:h=>h.fair,ev:h=>h.ev};
+const mvc=h=>h.mv10_2==null?'':(h.mv10_2<=-0.30?'mvA':(h.mv10_2<=-0.15?'mvB':''));
+const pct=v=>v==null?'':(v>0?'+':'')+Math.round(v*100)+'%';
+const SK={pos:h=>h.pos==null?null:-h.pos,mv:h=>h.mv10_2==null?null:-h.mv10_2,num:h=>h.num,odds:h=>h.odds,mkt:h=>h.mkt_p,score:h=>h.score,pp:h=>h.p_place,fair:h=>h.fair,ev:h=>h.ev};
 function setS(k){sk=(sk===k?'num':k);render()}
 function sorted(rs){const f=SK[sk];return [...rs].sort((a,b)=>{if(sk==='num')return a.num-b.num;const x=f(a),y=f(b);if(x==null&&y==null)return a.num-b.num;if(x==null)return 1;if(y==null)return -1;return y-x||a.num-b.num})}
 const TH=(k,l,r)=>`<th class="s ${r?'r':''} ${sk===k?'on':''}" onclick="setS('${k}')">${l}${sk===k&&k!=='num'?'<span class=ar> ▼</span>':''}</th>`;
@@ -75,16 +83,20 @@ function render(){
 function note(){const n=D.notes[mode]||'';const e=D.notes[mode+'_error'];return `<div class="warn">${n}${e?'<br>取得エラー：'+e:''}</div>`}
 function race(r){
   const isN=mode==='chiho';
-  const rows=sorted(r.runners).map(h=>`<tr class="${h.cancel?'cx':''}"><td><span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'}">${h.num}</span></td>
+  const fin=r.runners.some(h=>h.pos!=null);const mvs=isN&&r.has_moves;
+  const rows=sorted(r.runners).map(h=>`<tr class="${h.cancel?'cx':''} ${mvs?mvc(h):''}">${fin?`<td>${h.pos!=null?`<span class="ps ${h.pos<=3?'p'+h.pos:''}">${h.pos}</span>`:`<span class="pop">${h.pos_text||''}</span>`}</td>`:''}<td><span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'}">${h.num}</span></td>
     <td><div class="nm">${h.horse}</div><div class="jk">${h.jockey||''} ${h.sexage||''} ${h.kg||''}${h.hw?`　${h.hw}(${h.hw_diff>0?'+':''}${h.hw_diff})`:''}${isN&&h.runs===0?'　初出':''}</div></td>
     <td class="r">${h.odds??'-'}<div class="pop">${h.pop?h.pop+'人気':''}</div></td>
+    ${mvs?`<td class="r"><span class="mv ${h.mv10_2>0.15?'up':''}">${h.mv10_2!=null?pct(h.mv10_2):'-'}</span><div class="pop">${h.o10&&h.o2?h.o10+'→'+h.o2:''}</div></td>`:''}
     <td class="r">${h.mkt_p!=null?(h.mkt_p*100).toFixed(1)+'%':'-'}</td>
     <td class="r"><span class="sc ${isTop(r,h)?'s1':''}">${h.score??'—'}</span></td>
     ${isN?`<td class="r">${h.p_place!=null?(h.p_place*100).toFixed(0)+'%':'-'}</td><td class="r">${h.ev??'-'}<div class="pop">${h.fair?'適正'+h.fair:''}</div></td>`:''}</tr>`).join('');
   return `<div class="card"><div class="rh"><div class="rt">${r.place_name}${r.rno}R ${r.race_name||''}</div><div class="time">${r.post_time||''}</div></div>
   <div class="meta">${r.surface||''}${r.distance||''}m　${r.weather||''} ${r.going||''}${done(r)?'　<b>発走済み</b>':''}</div>
   <span class="verdict">判定：${r.verdict}</span>
-  <table><tr>${TH('num','番',0)}<th>馬名／騎手</th>${TH('odds','単勝',1)}${TH('mkt','市場<br>勝率',1)}${TH('score',isN?'HORSE<br>SCORE':'暫定<br>指数',1)}${isN?TH('pp','3着内<br>確率',1)+TH('ev','EV',1):''}</tr>${rows}</table>
+  <table><tr>${fin?TH('pos','着',0):''}${TH('num','番',0)}<th>馬名／騎手</th>${TH('odds','単勝',1)}${mvs?TH('mv','10→2分<br>前',1):''}${TH('mkt','市場<br>勝率',1)}${TH('score',isN?'HORSE<br>SCORE':'暫定<br>指数',1)}${isN?TH('pp','3着内<br>確率',1)+TH('ev','EV',1):''}</tr>${rows}</table>
+  ${r.payouts&&Object.keys(r.payouts).length?`<div class="pay">${Object.entries(r.payouts).map(([k,v])=>`<div><b>${k}</b><span>${v.map(x=>x.combo+'　'+Number(x.yen).toLocaleString()+'円').join('<br>')}</span></div>`).join('')}</div>`:''}
+  ${mvs?`<div class="leg"><span><i style="background:var(--hot)"></i>10分前→2分前で単勝オッズ30%以上下落（急に売れた）</span><span><i style="background:var(--warn)"></i>15〜30%下落</span><span class="up">＋は売れなかった</span></div>`:''}
   <div class="lg">${isN?'HORSE SCORE＝オッズを使わない能力指数（50が平均）。3着内＝3着以内に入る確率。適正＝1着確率から計算した単勝の理論オッズ。EV＝1着確率×実際の単勝オッズ（参考値）。見出しを押すとその項目の大きい順、もう一度押すと馬番順。':'暫定指数＝近4走の着差をレースの格で補正しただけのもの（未検証）。見出しを押すとその項目の大きい順、もう一度押すと馬番順。'}</div></div>`;
 }
 function isTop(r,h){const m=Math.max(...r.runners.map(x=>x.score??-1e9));return h.score!=null&&h.score===m}
