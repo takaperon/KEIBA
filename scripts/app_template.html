@@ -28,6 +28,7 @@ main{padding:12px 12px 40px}
 .verdict{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mut);font-size:12px;font-weight:700}
 table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
 th{color:var(--mut);font-weight:500;font-size:10.5px;text-align:left;padding:4px 2px;border-bottom:1px solid var(--line)}
+th.s{cursor:pointer;user-select:none}th.s.on{color:var(--ac);font-weight:800}th.s .ar{font-size:9px}
 td{padding:7px 2px;border-bottom:1px solid var(--line);vertical-align:middle}
 .w{display:inline-block;width:24px;height:24px;line-height:24px;border-radius:6px;font-weight:800;font-size:13px;text-align:center}
 .nm{font-weight:700}.jk{color:var(--mut);font-size:11px}
@@ -44,7 +45,11 @@ tr.cx{opacity:.35}
 const D=/*DATA*/null;
 const WC=['','#f2f2f2','#222','#e0303b','#2f6fe0','#f4d03f','#2fae5a','#ff8c2e','#ff6fb1'];
 const WT=['','#111','#fff','#fff','#fff','#111','#fff','#111','#111'];
-let mode='chiho',place=null,rno=null;
+let mode='chiho',place=null,rno=null,sk='num';
+const SK={num:h=>h.num,odds:h=>h.odds,mkt:h=>h.mkt_p,score:h=>h.score,pp:h=>h.p_place,fair:h=>h.fair,ev:h=>h.ev};
+function setS(k){sk=(sk===k?'num':k);render()}
+function sorted(rs){const f=SK[sk];return [...rs].sort((a,b)=>{if(sk==='num')return a.num-b.num;const x=f(a),y=f(b);if(x==null&&y==null)return a.num-b.num;if(x==null)return 1;if(y==null)return -1;return y-x||a.num-b.num})}
+const TH=(k,l,r)=>`<th class="s ${r?'r':''} ${sk===k?'on':''}" onclick="setS('${k}')">${l}${sk===k&&k!=='num'?'<span class=ar> ▼</span>':''}</th>`;
 const jst=()=>new Date(Date.now()+9*3600e3);
 const today=jst().toISOString().slice(0,10).replace(/-/g,'');
 const done=r=>today>D.date||(today===D.date&&(r.post_time||'99')<jst().toISOString().slice(11,16));
@@ -70,17 +75,17 @@ function render(){
 function note(){const n=D.notes[mode]||'';const e=D.notes[mode+'_error'];return `<div class="warn">${n}${e?'<br>取得エラー：'+e:''}</div>`}
 function race(r){
   const isN=mode==='chiho';
-  const rows=r.runners.map(h=>`<tr class="${h.cancel?'cx':''}"><td><span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'}">${h.num}</span></td>
+  const rows=sorted(r.runners).map(h=>`<tr class="${h.cancel?'cx':''}"><td><span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'}">${h.num}</span></td>
     <td><div class="nm">${h.horse}</div><div class="jk">${h.jockey||''} ${h.sexage||''} ${h.kg||''}${h.hw?`　${h.hw}(${h.hw_diff>0?'+':''}${h.hw_diff})`:''}${isN&&h.runs===0?'　初出':''}</div></td>
     <td class="r">${h.odds??'-'}<div class="pop">${h.pop?h.pop+'人気':''}</div></td>
     <td class="r">${h.mkt_p!=null?(h.mkt_p*100).toFixed(1)+'%':'-'}</td>
-    <td class="r"><span class="sc ${isTop(r,h)?'s1':''}">${h.score??'—'}</span>${isN?`<div class="pop">${h.p_place!=null?'3着内'+(h.p_place*100).toFixed(0)+'%':''}</div>`:''}</td>
-    ${isN?`<td class="r">${h.fair??'-'}<div class="pop">${h.ev!=null?'EV '+h.ev:''}</div></td>`:''}</tr>`).join('');
+    <td class="r"><span class="sc ${isTop(r,h)?'s1':''}">${h.score??'—'}</span></td>
+    ${isN?`<td class="r">${h.p_place!=null?(h.p_place*100).toFixed(0)+'%':'-'}</td><td class="r">${h.ev??'-'}<div class="pop">${h.fair?'適正'+h.fair:''}</div></td>`:''}</tr>`).join('');
   return `<div class="card"><div class="rh"><div class="rt">${r.place_name}${r.rno}R ${r.race_name||''}</div><div class="time">${r.post_time||''}</div></div>
   <div class="meta">${r.surface||''}${r.distance||''}m　${r.weather||''} ${r.going||''}${done(r)?'　<b>発走済み</b>':''}</div>
   <span class="verdict">判定：${r.verdict}</span>
-  <table><tr><th></th><th>馬名／騎手</th><th class="r">単勝</th><th class="r">市場勝率</th><th class="r">${isN?'HORSE<br>SCORE':'暫定指数'}</th>${isN?'<th class="r">適正<br>オッズ</th>':''}</tr>${rows}</table>
-  <div class="lg">${isN?'HORSE SCORE＝オッズを使わない能力指数（50が平均）。3着内＝3着以内に入る確率。適正オッズ＝1着確率から計算した単勝の理論オッズ。EV＝確率×実際のオッズ（参考値）。':'暫定指数＝近4走の着差をレースの格で補正しただけのもの（未検証）。'}</div></div>`;
+  <table><tr>${TH('num','番',0)}<th>馬名／騎手</th>${TH('odds','単勝',1)}${TH('mkt','市場<br>勝率',1)}${TH('score',isN?'HORSE<br>SCORE':'暫定<br>指数',1)}${isN?TH('pp','3着内<br>確率',1)+TH('ev','EV',1):''}</tr>${rows}</table>
+  <div class="lg">${isN?'HORSE SCORE＝オッズを使わない能力指数（50が平均）。3着内＝3着以内に入る確率。適正＝1着確率から計算した単勝の理論オッズ。EV＝1着確率×実際の単勝オッズ（参考値）。見出しを押すとその項目の大きい順、もう一度押すと馬番順。':'暫定指数＝近4走の着差をレースの格で補正しただけのもの（未検証）。見出しを押すとその項目の大きい順、もう一度押すと馬番順。'}</div></div>`;
 }
 function isTop(r,h){const m=Math.max(...r.runners.map(x=>x.score??-1e9));return h.score!=null&&h.score===m}
 try{const m=localStorage.getItem('km');if(m)mode=m}catch(e){}
