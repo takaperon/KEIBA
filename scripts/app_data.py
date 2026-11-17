@@ -130,7 +130,8 @@ try:
             return None
     for rr in races:
         for h in rr['runners']:
-            h['o30'], h['o10'], h['o2'], h['ofinal'] = (oo(rr['id'], m, h['num']) for m in (30, 10, 2, -3))
+            h['o60'], h['o30'], h['o10'], h['o2'], h['ofinal'] = (oo(rr['id'], m, h['num']) for m in (60, 30, 10, 2, -3))
+            h['mv60_2'] = round(h['o2'] / h['o60'] - 1, 3) if h['o2'] and h['o60'] else None
             h['mv10_2'] = round(h['o2'] / h['o10'] - 1, 3) if h['o2'] and h['o10'] else None
             h['mv30_2'] = round(h['o2'] / h['o30'] - 1, 3) if h['o2'] and h['o30'] else None
         rr['has_moves'] = any(h['mv10_2'] is not None for h in rr['runners'])

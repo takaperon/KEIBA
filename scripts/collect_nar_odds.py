@@ -1,12 +1,12 @@
 """NAR-L2：地方の締切前オッズのスナップショットを記録する（市場がまだ織り込めていない「オッズの動き」を取るため）。
 
-各レースについて、発走の 30・15・10・5・2 分前と、発走 3 分後に単勝オッズ（全頭）を記録する。
+各レースについて、発走の 60・45・30・15・10・5・2 分前（60・45分前は 2026-11-18 オーナーの提案で追加）と、発走 3 分後に単勝オッズ（全頭）を記録する。
 1 リクエストは小さな JSON で、間隔は最低 3 秒。データは公開の場所に置かない（Actions キャッシュ）。
 """
 import argparse, gzip, json, os, re, sys, time, datetime, urllib.request
 UA = 'Mozilla/5.0 (compatible; KEIBA-personal/0.1; +https://github.com/takaperon)'
 N = 'https://nar.netkeiba.com'
-MARKS = [30, 15, 10, 5, 2, -3]  # 発走の何分前（マイナスは発走後）
+MARKS = [60, 45, 30, 15, 10, 5, 2, -3]  # 発走の何分前（マイナスは発走後）
 JST = datetime.timezone(datetime.timedelta(hours=9))
 last_req = [0.0]
 
