@@ -26,12 +26,12 @@ main{padding:12px 12px 40px}
 .rt{font-size:17px;font-weight:800}.meta{color:var(--mut);font-size:12.5px;margin-top:4px}
 .time{font-weight:700;color:var(--ac);white-space:nowrap}
 .verdict{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mut);font-size:12px;font-weight:700}
-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}.tw{overflow-x:auto;margin:0 -6px}
 th{color:var(--mut);font-weight:500;font-size:10.5px;text-align:left;padding:4px 2px;border-bottom:1px solid var(--line)}
 th.s{cursor:pointer;user-select:none}th.s.on{color:var(--ac);font-weight:800}th.s .ar{font-size:9px}
 td{padding:7px 2px;border-bottom:1px solid var(--line);vertical-align:middle}
 .w{display:inline-block;width:24px;height:24px;line-height:24px;border-radius:6px;font-weight:800;font-size:13px;text-align:center}
-.nm{font-weight:700}.jk{color:var(--mut);font-size:11px}
+.nm{font-weight:700;font-size:12.5px;line-height:1.25}.jk{color:var(--mut);font-size:10.5px}
 .r{text-align:right;white-space:nowrap}.pop{color:var(--mut);font-size:10.5px}
 .sc{font-weight:800}.s1{color:var(--ac)}
 tr.cx{opacity:.35}
@@ -86,15 +86,14 @@ function race(r){
   const fin=r.runners.some(h=>h.pos!=null);const mvs=isN&&r.has_moves;
   const rows=sorted(r.runners).map(h=>`<tr class="${h.cancel?'cx':''} ${mvs?mvc(h):''}">${fin?`<td>${h.pos!=null?`<span class="ps ${h.pos<=3?'p'+h.pos:''}">${h.pos}</span>`:`<span class="pop">${h.pos_text||''}</span>`}</td>`:''}<td><span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'}">${h.num}</span></td>
     <td><div class="nm">${h.horse}</div><div class="jk">${h.jockey||''} ${h.sexage||''} ${h.kg||''}${h.hw?`　${h.hw}(${h.hw_diff>0?'+':''}${h.hw_diff})`:''}${isN&&h.runs===0?'　初出':''}</div></td>
-    <td class="r">${h.odds??'-'}<div class="pop">${h.pop?h.pop+'人気':''}</div></td>
+    <td class="r">${h.final_tan??h.odds??'-'}<div class="pop">${h.pop?h.pop+'人気':''}${h.mkt_p!=null?' '+Math.round(h.mkt_p*100)+'%':''}</div></td>
     ${mvs?`<td class="r"><span class="mv ${h.mv10_2>0.15?'up':''}">${h.mv10_2!=null?pct(h.mv10_2):'-'}</span><div class="pop">${h.o10&&h.o2?h.o10+'→'+h.o2:''}</div></td>`:''}
-    <td class="r">${h.mkt_p!=null?(h.mkt_p*100).toFixed(1)+'%':'-'}</td>
-    <td class="r"><span class="sc ${isTop(r,h)?'s1':''}">${h.score??'—'}</span></td>
-    ${isN?`<td class="r">${h.p_place!=null?(h.p_place*100).toFixed(0)+'%':'-'}</td><td class="r">${h.ev??'-'}<div class="pop">${h.fair?'適正'+h.fair:''}</div></td>`:''}</tr>`).join('');
+    <td class="r"><span class="sc ${isTop(r,h)?'s1':''}">${h.score??'—'}</span>${isN&&h.p_place!=null?`<div class="pop">3着内${Math.round(h.p_place*100)}%</div>`:''}</td>
+    ${isN?`<td class="r">${h.ev??'-'}<div class="pop">${h.fair?'適正'+h.fair:''}</div></td>`:''}</tr>`).join('');
   return `<div class="card"><div class="rh"><div class="rt">${r.place_name}${r.rno}R ${r.race_name||''}</div><div class="time">${r.post_time||''}</div></div>
   <div class="meta">${r.surface||''}${r.distance||''}m　${r.weather||''} ${r.going||''}${done(r)?'　<b>発走済み</b>':''}</div>
   <span class="verdict">判定：${r.verdict}</span>
-  <table><tr>${fin?TH('pos','着',0):''}${TH('num','番',0)}<th>馬名／騎手</th>${TH('odds','単勝',1)}${mvs?TH('mv','10→2分<br>前',1):''}${TH('mkt','市場<br>勝率',1)}${TH('score',isN?'HORSE<br>SCORE':'暫定<br>指数',1)}${isN?TH('pp','3着内<br>確率',1)+TH('ev','EV',1):''}</tr>${rows}</table>
+  <div class="tw"><table><tr>${fin?TH('pos','着',0):''}${TH('num','番',0)}<th>馬名／騎手</th>${TH('odds','単勝<br>人気･市場',1)}${mvs?TH('mv','10→2<br>分前',1):''}${TH('score',isN?'SCORE<br>3着内':'暫定<br>指数',1)}${isN?TH('ev','EV<br>適正',1):''}</tr>${rows}</table></div>
   ${r.payouts&&Object.keys(r.payouts).length?`<div class="pay">${Object.entries(r.payouts).map(([k,v])=>`<div><b>${k}</b><span>${v.map(x=>x.combo+'　'+Number(x.yen).toLocaleString()+'円').join('<br>')}</span></div>`).join('')}</div>`:''}
   ${mvs?`<div class="leg"><span><i style="background:var(--hot)"></i>10分前→2分前で単勝オッズ30%以上下落（急に売れた）</span><span><i style="background:var(--warn)"></i>15〜30%下落</span><span class="up">＋は売れなかった</span></div>`:''}
   <div class="lg">${isN?'HORSE SCORE＝オッズを使わない能力指数（50が平均）。3着内＝3着以内に入る確率。適正＝1着確率から計算した単勝の理論オッズ。EV＝1着確率×実際の単勝オッズ（参考値）。見出しを押すとその項目の大きい順、もう一度押すと馬番順。':'暫定指数＝近4走の着差をレースの格で補正しただけのもの（未検証）。見出しを押すとその項目の大きい順、もう一度押すと馬番順。'}</div></div>`;
