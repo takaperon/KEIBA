@@ -2,7 +2,9 @@ name: collect_nar
 # 地方の締切前オッズを記録（開催時間帯は自分で次の回を起動し続ける。定時実行は止まったときの保険）
 on:
   schedule:
-    - cron: '50 0 * * *'
+    - cron: '40 23 * * *'
+    - cron: '20 0 * * *'
+    - cron: '10 1 * * *'
     - cron: '50 5 * * *'
   workflow_dispatch:
   push:
@@ -28,7 +30,7 @@ jobs:
       - name: collect
         run: |
           H=$(TZ=Asia/Tokyo date +%H)
-          if [ $H -ge 22 ] || [ $H -lt 9 ]; then echo "開催時間外"; mkdir -p oddsdata; exit 0; fi
+          if [ $H -ge 22 ] || [ $H -lt 8 ]; then echo "開催時間外"; mkdir -p oddsdata; exit 0; fi
           python3 scripts/collect_nar_odds.py --data oddsdata --max-minutes 340
       - uses: actions/cache/save@v4
         if: always()
@@ -55,7 +57,7 @@ jobs:
         if: always()
         run: |
           H=$(TZ=Asia/Tokyo date +%H)
-          if [ $H -ge 9 ] && [ $H -lt 21 ]; then
+          if [ $H -ge 8 ] && [ $H -lt 21 ]; then
             curl -s -X POST -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" \
               https://api.github.com/repos/${{ github.repository }}/actions/workflows/collect_nar.yml/dispatches -d '{"ref":"main"}' -w "%{http_code}\n"
           fi
