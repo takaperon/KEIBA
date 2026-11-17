@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: pip install -q beautifulsoup4 lxml
-      - run: mkdir -p out && python3 scripts/probe_nk.py out/structure.json
+      - run: mkdir -p out && python3 scripts/probe_nk.py out/sample
       - run: |
           cd out && git init -q && git checkout -q -b nk-probe
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
