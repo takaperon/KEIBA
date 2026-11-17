@@ -1,0 +1,61 @@
+name: collect_nar
+# 地方の締切前オッズを記録（開催時間帯は自分で次の回を起動し続ける。定時実行は止まったときの保険）
+on:
+  schedule:
+    - cron: '50 0 * * *'
+    - cron: '50 5 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/collect_nar_odds.py', '.github/workflows/collect_nar.yml']
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: collect_nar
+  cancel-in-progress: false
+jobs:
+  c:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: oddsdata
+          key: nar-odds-${{ github.run_id }}
+          restore-keys: nar-odds-
+      - name: collect
+        run: |
+          H=$(TZ=Asia/Tokyo date +%H)
+          if [ $H -ge 22 ] || [ $H -lt 9 ]; then echo "開催時間外"; mkdir -p oddsdata; exit 0; fi
+          python3 scripts/collect_nar_odds.py --data oddsdata --max-minutes 340
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: oddsdata
+          key: nar-odds-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: status (counts only)
+        if: always()
+        run: |
+          git fetch origin nar-status:nar-status && git worktree add ns nar-status
+          python3 - <<'P'
+          import gzip, json, os, glob
+          out = {}
+          for fn in sorted(glob.glob('oddsdata/odds/*.jsonl.gz')):
+              with gzip.open(fn, 'rt') as f:
+                  rs = [json.loads(l) for l in f]
+              out[os.path.basename(fn)[:8]] = {'snapshots': len(rs), 'races': len({r['race_id'] for r in rs})}
+          st = json.load(open('oddsdata/collector_status.json')) if os.path.exists('oddsdata/collector_status.json') else {}
+          json.dump({'by_day': out, 'last_run': st}, open('ns/odds_collect.json', 'w'), ensure_ascii=False, indent=1)
+          P
+          cd ns && git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A && git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m odds-status || true
+          git push -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:nar-status || true
+      - name: chain next run while racing hours
+        if: always()
+        run: |
+          H=$(TZ=Asia/Tokyo date +%H)
+          if [ $H -ge 9 ] && [ $H -lt 21 ]; then
+            curl -s -X POST -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/${{ github.repository }}/actions/workflows/collect_nar.yml/dispatches -d '{"ref":"main"}' -w "%{http_code}\n"
+          fi
