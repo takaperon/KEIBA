@@ -142,3 +142,36 @@ def parse_shutuba(html: str, rid: str) -> dict:
                      'trainer': tx(g('td.Trainer'))})
     d['runners'] = rows
     return d
+
+
+def parse_nar_result(html: str) -> dict:
+    """nar.netkeiba の当日結果ページ（/race/result.html）：着順・単勝オッズと払戻"""
+    s = BeautifulSoup(html, 'lxml')
+    rows = {}
+    tb = s.find('table', id='All_Result_Table')
+    for tr in (tb.find('tbody').find_all('tr') if tb and tb.find('tbody') else []):
+        tds = tr.find_all('td')
+        if len(tds) < 11:
+            continue
+        rank = tds[0].get_text(strip=True)
+        num = tds[2].get_text(strip=True)
+        if not num.isdigit():
+            continue
+        odds = tr.select_one('.Odds_Ninki')
+        rows[int(num)] = {'pos': int(rank) if rank.isdigit() else None, 'pos_text': rank,
+                          'tan': _num(odds.get_text(strip=True)) if odds else None}
+    pay = {}
+    for tr in s.select('table.Payout_Detail_Table tr'):
+        th = tr.find('th'); res = tr.find('td', class_='Result'); py = tr.find('td', class_='Payout')
+        if not (th and res and py):
+            continue
+        kind = th.get_text(strip=True)
+        uls = res.find_all('ul')
+        sep = '→' if kind in ('馬単', '3連単', '枠単') else '-'
+        if uls:
+            combos = [sep.join(li.get_text(strip=True) for li in ul.find_all('li') if li.get_text(strip=True)) for ul in uls]
+        else:
+            combos = [sp.get_text(strip=True) for sp in res.find_all('span') if sp.get_text(strip=True)]
+        yens = [_num(x.replace('円', '')) for x in py.get_text('|', strip=True).split('|') if x]
+        pay[kind] = [{'combo': c, 'yen': y} for c, y in zip(combos, yens)]
+    return {'runners': rows, 'payouts': pay}

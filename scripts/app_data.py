@@ -140,14 +140,14 @@ try:
             pt = rr.get('post_time') or '99:99'
             if now.strftime('%H:%M') < (datetime.datetime.strptime(pt, '%H:%M') + datetime.timedelta(minutes=15)).strftime('%H:%M'):
                 continue
-            res = nk.parse_race(nk.decode(get(f'https://db.netkeiba.com/race/{rr["id"]}/')), rr['id'])
-            if not res['runners'] or not any(h.get('pos') for h in res['runners']):
+            res = nk.parse_nar_result(get(f'https://nar.netkeiba.com/race/result.html?race_id={rr["id"]}').decode('utf-8', 'replace'))
+            if not any(h.get('pos') for h in res['runners'].values()):
                 continue
-            pos = {h['num']: h for h in res['runners']}
+            pos = res['runners']
             for h in rr['runners']:
                 x = pos.get(h['num']) or {}
                 h['pos'] = x.get('pos'); h['pos_text'] = x.get('pos_text'); h['final_tan'] = x.get('tan')
-            rr['payouts'] = {k: v for k, v in res['payouts'].items() if k in ('単勝', '複勝', 'ワイド', '馬連', '三連複', '三連単')}
+            rr['payouts'] = {k: v for k, v in res['payouts'].items() if k in ('単勝', '複勝', 'ワイド', '馬連', '馬単', '3連複', '3連単')}
         except Exception as e:  # noqa
             print('result ERR', rr['id'], e)
     for rr in races:
@@ -195,7 +195,7 @@ try:
                 for hh in rr['runners']:
                     x = pos.get(hh['num']) or {}
                     hh['pos'] = x.get('pos'); hh['pos_text'] = x.get('pos_text')
-                rr['payouts'] = {k2: v for k2, v in res['payouts'].items() if k2 in ('単勝', '複勝', 'ワイド', '馬連', '3連複', '3連単')}
+                rr['payouts'] = {k2: v for k2, v in res['payouts'].items() if k2 in ('単勝', '複勝', 'ワイド', '馬連', '馬単', '3連複', '3連単')}
     except Exception as e:  # noqa
         print('jra result ERR', e)
     out['modes']['chuo'] = races
