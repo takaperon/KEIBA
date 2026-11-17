@@ -269,3 +269,19 @@ if th:
     P(f'    見送りの有効性（軸馬の複勝回収）: 買ったレース {a.fuku.sum() / max(1, len(a) * 100):.1%}（{len(a)}R） ／ 見送ったレース {b.fuku.sum() / max(1, len(b) * 100):.1%}（{len(b)}R）')
 w = B[(B.part == 'test') & (B.kind == 'ワイド')]
 P(f'    相手馬の期待値（ワイド、軸×相手の全組）: EV平均 {w.ev.mean():.2f} 実際の回収 {w.ret.sum() / (len(w) * 100):.1%}（{len(w)}点）')
+
+# ---- 乖離の分析：モデルと市場がずれたとき、どちらが正しいか（テスト期間） ----
+P('\n[乖離] モデル1着確率 ÷ 市場1着確率（オッズから）の帯ごとの実際（テスト）')
+t = df[(df.split == 'test') & df.tan.notna()].copy()
+t['mkt'] = 1 / t.tan; t['mkt'] = t.mkt / t.groupby('race').mkt.transform('sum')
+t['ratio'] = t.p_win / t.mkt
+fk = {}
+for rid in t.race.unique():
+    fk[rid] = pays(RACE[rid], '複勝')
+t['fuku'] = [fk[r].get(str(int(n)), 0) for r, n in zip(t.race, t.num)]
+t['tanp'] = np.where(t.win == 1, t.tan * 100, 0)
+for lo, hi in ((0, .5), (.5, .8), (.8, 1.0), (1.0, 1.25), (1.25, 1.6), (1.6, 2.2), (2.2, 99)):
+    for pl, ph, nm in ((1, 3, '1-3人気'), (4, 6, '4-6人気'), (7, 99, '7人気以下')):
+        x = t[(t.ratio >= lo) & (t.ratio < hi) & (t['pop'] >= pl) & (t['pop'] <= ph)]
+        if len(x) >= 200:
+            P(f'  比{lo:.2f}-{hi:.2f} {nm:<7} n={len(x):>6} 市場勝率{x.mkt.mean():5.1%} モデル{x.p_win.mean():5.1%} 実際{x.win.mean():5.1%} | 単回収{x.tanp.sum() / (len(x) * 100):6.1%} 複回収{x.fuku.sum() / (len(x) * 100):6.1%}')
