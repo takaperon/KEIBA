@@ -1,0 +1,61 @@
+name: collect_jra
+# 中央の締切前オッズを記録（土日・祝日。開催が無ければすぐ終わる）。開催中は自分で次の回を起動
+on:
+  schedule:
+    - cron: '20 0 * * *'
+    - cron: '0 1 * * *'
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: collect_jra
+  cancel-in-progress: false
+jobs:
+  c:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: jraodds
+          key: jra-odds-${{ github.run_id }}
+          restore-keys: jra-odds-
+      - run: pip install -q beautifulsoup4 lxml
+      - name: collect
+        run: |
+          H=$(TZ=Asia/Tokyo date +%H)
+          if [ $H -ge 18 ] || [ $H -lt 8 ]; then echo "時間外"; mkdir -p jraodds; exit 0; fi
+          python3 scripts/collect_jra_odds.py --data jraodds --max-minutes 340
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: jraodds
+          key: jra-odds-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: status (counts only)
+        if: always()
+        run: |
+          git fetch origin nar-status:nar-status && git worktree add ns nar-status
+          python3 - <<'P'
+          import gzip, json, os, glob
+          out = {}
+          for fn in sorted(glob.glob('jraodds/odds/*.jsonl.gz')):
+              with gzip.open(fn, 'rt') as f:
+                  rs = [json.loads(l) for l in f]
+              out[os.path.basename(fn)[:8]] = {'snapshots': len(rs), 'races': len({(r['place'], r['rno']) for r in rs})}
+          st = json.load(open('jraodds/collector_status.json')) if os.path.exists('jraodds/collector_status.json') else {}
+          json.dump({'by_day': out, 'last_run': st}, open('ns/jra_odds_collect.json', 'w'), ensure_ascii=False, indent=1)
+          P
+          cd ns && git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A && git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m jra-odds-status || true
+          git push -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:nar-status || true
+      - name: chain while racing hours (only on race days)
+        if: always()
+        run: |
+          H=$(TZ=Asia/Tokyo date +%H)
+          R=$(python3 -c "import json;print(json.load(open('jraodds/collector_status.json')).get('races',0))" 2>/dev/null || echo 0)
+          if [ "$R" != "0" ] && [ $H -ge 8 ] && [ $H -lt 16 ]; then
+            curl -s -X POST -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/${{ github.repository }}/actions/workflows/collect_jra.yml/dispatches -d '{"ref":"main"}' -w "%{http_code}\n"
+          fi
