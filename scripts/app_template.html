@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KEIBA</title>
+<style>
+:root{--bg:#0b0e14;--card:#141a24;--line:#232c3b;--tx:#e8ecf3;--mut:#8a96a8;--neo:#2ef2c8;--hot:#ff4d8d;--warn:#ffb020;--nar:#7c8cff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif}
+header{position:sticky;top:0;z-index:5;background:rgba(11,14,20,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 14px 8px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+h1{margin:0;font-size:19px;letter-spacing:.12em}
+.sw{display:flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px}
+.sw button{border:0;background:none;color:var(--mut);font-weight:800;padding:6px 16px;border-radius:999px;font-size:14px}
+.sw button.on.c{background:var(--neo);color:#04211b}.sw button.on.n{background:var(--nar);color:#0b0e2a}
+.sub{color:var(--mut);font-size:12px;margin-top:4px}
+.tabs{display:flex;gap:6px;margin-top:10px;overflow-x:auto}
+.tab{flex:0 0 auto;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--mut);font-weight:600}
+.tab.on{border-color:var(--ac);color:var(--ac)}
+.rn{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px}
+.rn::-webkit-scrollbar,.tabs::-webkit-scrollbar{display:none}
+.rn button{flex:0 0 auto;width:42px;padding:6px 0;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--tx);font-weight:700}
+.rn button.done{opacity:.4}.rn button.on{background:var(--ac);color:#04111b;border-color:var(--ac)}
+main{padding:12px 12px 40px}
+.warn{border:1px solid rgba(255,176,32,.4);background:rgba(255,176,32,.08);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:12.5px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+.rh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.rt{font-size:17px;font-weight:800}.meta{color:var(--mut);font-size:12.5px;margin-top:4px}
+.time{font-weight:700;color:var(--ac);white-space:nowrap}
+.verdict{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mut);font-size:12px;font-weight:700}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+th{color:var(--mut);font-weight:500;font-size:10.5px;text-align:left;padding:4px 2px;border-bottom:1px solid var(--line)}
+td{padding:7px 2px;border-bottom:1px solid var(--line);vertical-align:middle}
+.w{display:inline-block;width:24px;height:24px;line-height:24px;border-radius:6px;font-weight:800;font-size:13px;text-align:center}
+.nm{font-weight:700}.jk{color:var(--mut);font-size:11px}
+.r{text-align:right;white-space:nowrap}.pop{color:var(--mut);font-size:10.5px}
+.sc{font-weight:800}.s1{color:var(--ac)}
+tr.cx{opacity:.35}
+.lg{color:var(--mut);font-size:11.5px;margin-top:8px}
+.empty{color:var(--mut);text-align:center;padding:40px 0}
+</style></head><body>
+<header><div class="top"><h1>KEIBA</h1><div class="sw"><button id="bc" class="c" onclick="setM('chuo')">中央</button><button id="bn" class="n" onclick="setM('chiho')">地方</button></div></div>
+<div class="sub" id="sub"></div><div class="tabs" id="tabs"></div><div class="rn" id="rn"></div></header>
+<main id="main"></main>
+<script>
+const D=/*DATA*/null;
+const WC=['','#f2f2f2','#222','#e0303b','#2f6fe0','#f4d03f','#2fae5a','#ff8c2e','#ff6fb1'];
+const WT=['','#111','#fff','#fff','#fff','#111','#fff','#111','#111'];
+let mode='chiho',place=null,rno=null;
+const jst=()=>new Date(Date.now()+9*3600e3);
+const today=jst().toISOString().slice(0,10).replace(/-/g,'');
+const done=r=>today>D.date||(today===D.date&&(r.post_time||'99')<jst().toISOString().slice(11,16));
+const R=()=>D.modes[mode]||[];
+function setM(m){mode=m;try{localStorage.setItem('km',m)}catch(e){};place=null;init();scrollTo(0,0)}
+function init(){
+  document.documentElement.style.setProperty('--ac',mode==='chuo'?'var(--neo)':'var(--nar)');
+  bc.classList.toggle('on',mode==='chuo');bn.classList.toggle('on',mode==='chiho');
+  sub.textContent=`${D.date.slice(0,4)}/${D.date.slice(4,6)}/${D.date.slice(6)}　データ作成 ${D.built_at.slice(11)}（オッズはこの時点）`;
+  const ps=[...new Set(R().map(r=>r.place_name))];
+  if(!ps.includes(place))place=ps[0];
+  const nx=R().find(r=>r.place_name===place&&!done(r));rno=nx?nx.rno:(R().find(r=>r.place_name===place)||{}).rno;
+  render();
+}
+function render(){
+  const ps=[...new Set(R().map(r=>r.place_name))];
+  tabs.innerHTML=ps.map(p=>`<button class="tab ${p===place?'on':''}" onclick="place='${p}';const nx=R().find(r=>r.place_name===place&&!done(r));rno=nx?nx.rno:1;render()">${p}</button>`).join('');
+  if(!ps.length){rn.innerHTML='';main.innerHTML=note()+`<div class="empty">${mode==='chuo'?'中央':'地方'}は今日の開催がありません</div>`;return}
+  rn.innerHTML=R().filter(r=>r.place_name===place).map(r=>`<button class="${r.rno===rno?'on':''} ${done(r)?'done':''}" onclick="rno=${r.rno};render();scrollTo(0,0)">${r.rno}R</button>`).join('');
+  const r=R().find(x=>x.place_name===place&&x.rno===rno);
+  main.innerHTML=note()+(r?race(r):'');
+}
+function note(){const n=D.notes[mode]||'';const e=D.notes[mode+'_error'];return `<div class="warn">${n}${e?'<br>取得エラー：'+e:''}</div>`}
+function race(r){
+  const isN=mode==='chiho';
+  const rows=r.runners.map(h=>`<tr class="${h.cancel?'cx':''}"><td><span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'}">${h.num}</span></td>
+    <td><div class="nm">${h.horse}</div><div class="jk">${h.jockey||''} ${h.sexage||''} ${h.kg||''}${h.hw?`　${h.hw}(${h.hw_diff>0?'+':''}${h.hw_diff})`:''}${isN&&h.runs===0?'　初出':''}</div></td>
+    <td class="r">${h.odds??'-'}<div class="pop">${h.pop?h.pop+'人気':''}</div></td>
+    <td class="r">${h.mkt_p!=null?(h.mkt_p*100).toFixed(1)+'%':'-'}</td>
+    <td class="r"><span class="sc ${isTop(r,h)?'s1':''}">${h.score??'—'}</span>${isN?`<div class="pop">${h.p_place!=null?'3着内'+(h.p_place*100).toFixed(0)+'%':''}</div>`:''}</td>
+    ${isN?`<td class="r">${h.fair??'-'}<div class="pop">${h.ev!=null?'EV '+h.ev:''}</div></td>`:''}</tr>`).join('');
+  return `<div class="card"><div class="rh"><div class="rt">${r.place_name}${r.rno}R ${r.race_name||''}</div><div class="time">${r.post_time||''}</div></div>
+  <div class="meta">${r.surface||''}${r.distance||''}m　${r.weather||''} ${r.going||''}${done(r)?'　<b>発走済み</b>':''}</div>
+  <span class="verdict">判定：${r.verdict}</span>
+  <table><tr><th></th><th>馬名／騎手</th><th class="r">単勝</th><th class="r">市場勝率</th><th class="r">${isN?'HORSE<br>SCORE':'暫定指数'}</th>${isN?'<th class="r">適正<br>オッズ</th>':''}</tr>${rows}</table>
+  <div class="lg">${isN?'HORSE SCORE＝オッズを使わない能力指数（50が平均）。3着内＝3着以内に入る確率。適正オッズ＝1着確率から計算した単勝の理論オッズ。EV＝確率×実際のオッズ（参考値）。':'暫定指数＝近4走の着差をレースの格で補正しただけのもの（未検証）。'}</div></div>`;
+}
+function isTop(r,h){const m=Math.max(...r.runners.map(x=>x.score??-1e9));return h.score!=null&&h.score===m}
+try{const m=localStorage.getItem('km');if(m)mode=m}catch(e){}
+if(!(D.modes[mode]||[]).length&&(D.modes[mode==='chuo'?'chiho':'chuo']||[]).length)mode=mode==='chuo'?'chiho':'chuo';
+init();
+</script></body></html>
