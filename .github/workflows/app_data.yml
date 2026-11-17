@@ -1,0 +1,39 @@
+name: app_data
+# アプリ用の当日データ（中央・地方）を作り、暗号化して app-data ブランチへ置く
+on:
+  schedule:
+    - cron: '20 0 * * *'
+    - cron: '20 3 * * *'
+    - cron: '20 6 * * *'
+    - cron: '20 9 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/app_data.py', 'keiba/nk.py', '.github/workflows/app_data.yml']
+permissions:
+  contents: write
+concurrency:
+  group: app_data
+  cancel-in-progress: true
+jobs:
+  a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: nardata
+          key: nar-data-none
+          restore-keys: nar-data-
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -q numpy pandas scikit-learn lightgbm beautifulsoup4 lxml
+      - run: python3 scripts/app_data.py nardata
+      - name: seal and push
+        run: |
+          mkdir -p ad && bash scripts/seal.sh appout/app.json ad/app.sealed && date -u > ad/built_at.txt
+          cd ad && git init -q && git checkout -q -b app-data
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m app-data
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" app-data

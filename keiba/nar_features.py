@@ -174,7 +174,7 @@ def build(races, std):
             f['last3f_rel_mean'] = mean([x['l3rel'] for x in last5])
             f['front_cnt'] = fronts
             f['style_x_front'] = (f['corner1_pct'] * fronts) if f['corner1_pct'] is not None else None
-            t = tr[h.get('trainer')]
+            t = tr[trainer_key(h.get('trainer'))]
             f['tr_runs'] = t[0]
             f['tr_top3'] = (t[2] + 0.25 * 20) / (t[0] + 20)
             f['tr_win'] = (t[1] + 0.09 * 20) / (t[0] + 20)
@@ -212,13 +212,18 @@ def build(races, std):
                 'gain': ((cs[-1] - h['pos']) / max(1, field - 1)) if cs and h.get('pos') else None,
                 'l3rel': (h['last3f'] - l3med) if h.get('last3f') and l3med else None,
                 'hw': h.get('hw'), 'kg': h.get('kg'), 'cls': cls, 'opp': opp})
-            t2 = tr[h.get('trainer')]
+            t2 = tr[trainer_key(h.get('trainer'))]
             t2[0] += 1
             if h.get('pos') == 1:
                 t2[1] += 1
             if h.get('pos') and h['pos'] <= 3:
                 t2[2] += 1
     return rows
+
+
+def trainer_key(t):
+    t = re.sub(r'\[.*?\]|（.*?）|\(.*?\)', ' ', t or '').split()
+    return t[-1] if t else None
 
 
 _D = {}

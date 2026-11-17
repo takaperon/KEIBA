@@ -89,3 +89,56 @@ def parse_race(html: str, rid: str) -> dict:
                 corners[th.get_text(strip=True)] = td.get_text(strip=True)
     d['corner_text'] = corners
     return d
+
+
+def parse_shutuba(html: str, rid: str) -> dict:
+    """nar.netkeiba の出馬表（当日）。結果ページと同じ形の dict（着順なし）にする"""
+    s = BeautifulSoup(html, 'lxml')
+    d = {'id': rid, 'date': rid[:4] + rid[6:10], 'place': rid[4:6], 'place_name': NAR_PLACES.get(rid[4:6], rid[4:6]),
+         'rno': int(rid[10:12]), 'payouts': {}, 'corner_text': {}}
+    rd1 = s.find(class_='RaceData01'); t1 = rd1.get_text(' ', strip=True) if rd1 else ''
+    rd2 = s.find(class_='RaceData02'); t2 = rd2.get_text(' ', strip=True) if rd2 else ''
+    nm = s.find(class_='RaceName')
+    d['race_name'] = nm.get_text(' ', strip=True) if nm else None
+    m = re.search(r'(\d{1,2}:\d{2})発走', t1); d['post_time'] = m.group(1) if m else None
+    m = re.search(r'(芝|ダ|障)(\d+)m', t1); d['surface'] = m.group(1) if m else None; d['distance'] = int(m.group(2)) if m else None
+    m = re.search(r'天候\s*:\s*(\S+)', t1); d['weather'] = m.group(1) if m else None
+    m = re.search(r'馬場\s*:\s*(\S+)', t1); d['going'] = m.group(1).replace('&nbsp;', '') if m else None
+    if d['going']:
+        d['going'] = re.sub(r'[^良稍重不]', '', d['going']) or None
+    d['meta'] = t2
+    if not d['race_name'] or re.fullmatch(r'\d+R', d['race_name'] or ''):
+        m = re.search(r'(サラ系|アラ系)?\S*\s*([ABC]\d?\S*|\d歳\S*)', t2)
+        d['race_name'] = (d['race_name'] or '') + ' ' + t2
+    rows = []
+    for tr in s.select('tr.HorseList'):
+        g = lambda sel: tr.select_one(sel)
+        tx = lambda el: el.get_text(' ', strip=True) if el else ''
+        waku = tr.find('td', class_=re.compile(r'^Waku'))
+        uma = tr.find('td', class_=re.compile(r'^Umaban'))
+        a = g('.HorseName a')
+        hid = re.search(r'/horse/(\w+)', a['href']).group(1) if a and a.get('href') else None
+        tds = tr.find_all('td')
+        kg = None
+        for td in tds:
+            if 'Txt_C' in (td.get('class') or []) and re.fullmatch(r'\d+\.\d', tx(td)):
+                kg = float(tx(td)); break
+        jk = g('td.Jockey a')
+        hwt = tx(g('td.Weight'))
+        hw = re.match(r'(\d+)\s*\(([+\-]?\d+)\)', hwt)
+        odds = tx(g('.Odds_Ninki'))
+        pop = None
+        for td in tr.select('td.Popular'):
+            if 'Txt_C' in (td.get('class') or []) and tx(td).isdigit():
+                pop = int(tx(td))
+        cancel = 'Cancel' in ' '.join(tr.get('class') or []) or '取消' in tx(tr) or '除外' in tx(tr)
+        if not tx(uma).isdigit() or not a:
+            continue
+        rows.append({'pos': None, 'pos_text': '取' if cancel else '', 'waku': tx(waku), 'num': int(tx(uma)) if tx(uma).isdigit() else None,
+                     'horse': tx(g('.HorseName')), 'horse_id': hid, 'sexage': tx(g('.Age')), 'kg': kg,
+                     'jockey': tx(jk), 'jockey_id': None, 'time': None, 'margin': None, 'corners': [], 'last3f': None,
+                     'tan': float(odds) if re.fullmatch(r'\d+\.\d', odds) else None, 'pop': pop,
+                     'hw': int(hw.group(1)) if hw else None, 'hw_diff': int(hw.group(2)) if hw else None,
+                     'trainer': tx(g('td.Trainer'))})
+    d['runners'] = rows
+    return d
