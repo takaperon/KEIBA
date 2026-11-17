@@ -93,9 +93,9 @@ function race(r){
   return `<div class="card"><div class="rh"><div class="rt">${r.place_name}${r.rno}R ${r.race_name||''}</div><div class="time">${r.post_time||''}</div></div>
   <div class="meta">${r.surface||''}${r.distance||''}m　${r.weather||''} ${r.going||''}${done(r)?'　<b>発走済み</b>':''}</div>
   <span class="verdict">判定：${r.verdict}</span>
-  <div class="tw"><table><tr>${fin?TH('pos','着',0):''}${TH('num','番',0)}<th>馬名／騎手</th>${TH('odds','単勝<br>人気･市場',1)}${mvs?TH('mv','10→2<br>分前',1):''}${mvs?TH('mv60','1時間<br>前比',1):''}${TH('score',isN?'SCORE<br>3着内':'暫定<br>指数',1)}${isN?TH('ev','EV<br>適正',1):''}</tr>${rows}</table></div>
+  <div class="tw"><table><tr>${fin?TH('pos','着',0):''}${TH('num','番',0)}<th>馬名／騎手</th>${TH('odds','単勝<br>人気･市場',1)}${mvs?TH('mv','10→2<br>分前',1):''}${TH('score',isN?'SCORE<br>3着内':'暫定<br>指数',1)}${isN?TH('ev','EV<br>適正',1):''}</tr>${rows}</table></div>
   ${r.payouts&&Object.keys(r.payouts).length?`<div class="pay">${Object.entries(r.payouts).map(([k,v])=>`<div><b>${k}</b><span>${v.map(x=>x.combo+'　'+Number(x.yen).toLocaleString()+'円').join('<br>')}</span></div>`).join('')}</div>`:''}
-  ${mvs?`<div class="leg"><span><i style="background:var(--hot)"></i>10分前→2分前で単勝オッズ30%以上下落（急に売れた）</span><span><i style="background:var(--warn)"></i>15〜30%下落</span><span class="up">＋は売れなかった</span><span>下段は1時間前→2分前の変化（並び替えは見出しの「1時間」）</span></div>`:''}
+  ${mvs?`<div class="leg"><span><i style="background:var(--hot)"></i>10分前→2分前で単勝オッズ30%以上下落（急に売れた）</span><span><i style="background:var(--warn)"></i>15〜30%下落</span><span class="up">＋は売れなかった</span><span onclick="setS('mv60')" style="text-decoration:underline">下段＝1時間前→2分前の変化（ここを押すと1時間前比で売れた順）</span></div>`:''}
   <div class="lg">${isN?'HORSE SCORE＝オッズを使わない能力指数（50が平均）。3着内＝3着以内に入る確率。適正＝1着確率から計算した単勝の理論オッズ。EV＝1着確率×実際の単勝オッズ（参考値）。見出しを押すとその項目の大きい順、もう一度押すと馬番順。':'暫定指数＝近4走の着差をレースの格で補正しただけのもの（未検証）。見出しを押すとその項目の大きい順、もう一度押すと馬番順。'}</div></div>`;
 }
 function isTop(r,h){const m=Math.max(...r.runners.map(x=>x.score??-1e9));return h.score!=null&&h.score===m}
