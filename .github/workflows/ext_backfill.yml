@@ -1,0 +1,45 @@
+name: ext_backfill
+# 外部指数（かよちん・水分ボンバー）の過去2年分を集める。そろうまで自分で次を起動。そろった後は毎日前日分を足す
+on:
+  schedule:
+    - cron: '30 15 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/ext_backfill.py', 'keiba/ext.py', '.github/workflows/ext_backfill.yml']
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: ext_backfill
+  cancel-in-progress: false
+jobs:
+  e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: extdata
+          key: ext-data-${{ github.run_id }}
+          restore-keys: ext-data-
+      - run: pip install -q beautifulsoup4 lxml
+      - run: rm -f extdata/EXT_DONE; python3 scripts/ext_backfill.py --data extdata --max-minutes 320 | tee ext.log
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: extdata
+          key: ext-data-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: status (counts only)
+        if: always()
+        run: |
+          git fetch origin nar-status:nar-status && git worktree add ns nar-status
+          tail -1 ext.log > ns/ext_status.txt; date -u >> ns/ext_status.txt
+          cd ns && git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A && git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m ext-status || true
+          git push -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:nar-status || true
+      - name: chain until done
+        if: success() && hashFiles('extdata/EXT_DONE') == '' && hashFiles('extdata/EXT_STOPPED') == ''
+        run: |
+          curl -s -X POST -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/ext_backfill.yml/dispatches -d '{"ref":"main"}' -w "%{http_code}\n"
