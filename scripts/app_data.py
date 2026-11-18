@@ -54,7 +54,7 @@ try:
             od = j.get('ary_odds') or {}
             for h in r['runners']:
                 o = od.get(f"{h['num']:02d}") or od.get(str(h['num'])) or {}
-                if o.get('Odds') and re.fullmatch(r'\d+(\.\d+)?', str(o['Odds'])):
+                if o.get('Odds') and re.fullmatch(r'\d+(\.\d+)?', str(o['Odds'])) and float(o['Odds']) > 0:
                     h['tan'] = float(o['Odds']); h['pop'] = int(o['Ninki']) if str(o.get('Ninki', '')).isdigit() else h['pop']
             r['odds_status'] = j.get('odds_status')
             today.append(r)
