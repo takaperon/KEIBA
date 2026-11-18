@@ -43,7 +43,7 @@ try:
         with gzip.open(f'{D}/races/{fn}', 'rt') as f:
             for l in f:
                 r = json.loads(l); hist[r['id']] = r
-    hist = sorted(hist.values(), key=lambda r: (r['date'], r['post_time'] or '', r['place'], r['rno']))
+    hist = sorted((r for r in hist.values() if r['date'] < day), key=lambda r: (r['date'], r['post_time'] or '', r['place'], r['rno']))  # 当日以降は使わない（過去日テスト時も未来を混ぜない）
     hl = get(f'https://nar.netkeiba.com/top/race_list_sub.html?kaisai_date={day}').decode('utf-8', 'replace')
     ids = [i for i in sorted(set(re.findall(r'race_id=(\d{12})', hl))) if i[4:6] != '65']
     today = []
@@ -216,7 +216,10 @@ try:
     n_need = n_hit = 0
     for rr in races:
         code = rr['id'][4:6]
-        rr['is_shinba'] = '新馬' in (rr.get('race_name') or '')
+        # 新馬戦は場ごとに名前が違う（New Beginning・ファーストステップ・○○デビュー等）ので、名前か「ほぼ全頭が初出走」で見分ける
+        n0 = sum(1 for h in rr['runners'] if not h.get('runs') and not h.get('cancel'))
+        nn = sum(1 for h in rr['runners'] if not h.get('cancel')) or 1
+        rr['is_shinba'] = bool(re.search(r'新馬|デビュー|ファーストステップ|New\s*Beginning', rr.get('race_name') or '', re.I)) or n0 / nn >= 0.8
         rr['noken_src'] = NOKEN_SRC.get(code)
         rr['noken_none'] = NOKEN_NONE.get(code)
         for h in rr['runners']:
