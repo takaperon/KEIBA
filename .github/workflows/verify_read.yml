@@ -1,0 +1,33 @@
+name: verify_read
+# 場ごとの読み取り確認（件数と一致数だけを verify-status ブランチへ）
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/verify_read.py', '.github/workflows/verify_read.yml']
+permissions:
+  contents: write
+jobs:
+  v:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: nardata
+          key: nar-data-none
+          restore-keys: nar-data-
+      - run: |
+          git fetch -q origin data && mkdir -p jradata && git --work-tree=jradata checkout origin/data -- races && git reset -q
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -q beautifulsoup4 lxml
+      - run: python3 scripts/verify_read.py nardata
+      - if: always()
+        run: |
+          mkdir -p vs && cp vout/verify.json vs/ 2>/dev/null || echo '{}' > vs/verify.json
+          cd vs && git init -q && git checkout -q -b verify-status
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m v
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" verify-status
