@@ -65,3 +65,26 @@ def kayo_url_key(url):
     if not m or m.group(2) not in KAYO:
         return None
     return '20' + m.group(1), KAYO[m.group(2)]
+
+
+def knavi_url(day, place, rno):
+    """競馬ナビ（m-jockey.co.jp/keiba-navi）の地方AI予想。当日分だけ（過去日は 403）。場コードは netkeiba と同じ"""
+    return f'https://m-jockey.co.jp/keiba-navi/localrace/ai-all-race-predictions/?ymd={day}&venue={place}&race_num={rno:02d}'
+
+
+def knavi_race(html):
+    """{馬番: ナビ指数}"""
+    s = BeautifulSoup(html, 'lxml')
+    for tb in s.find_all('table'):
+        head = tb.get_text(' ', strip=True)[:200]
+        if 'ナビ指数' not in head or '馬番' not in head:
+            continue
+        out = {}
+        for tr in tb.find_all('tr'):
+            tds = tr.find_all('td')
+            if len(tds) >= 5 and tds[1].get_text(strip=True).isdigit():
+                v = tds[-1].get_text(strip=True)
+                if re.fullmatch(r'-?\d+(\.\d+)?', v):
+                    out[int(tds[1].get_text(strip=True))] = float(v)
+        return out
+    return {}

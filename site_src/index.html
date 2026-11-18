@@ -91,7 +91,7 @@ function race(r){
     <td class="r">${h.final_tan??h.odds??'-'}${h.prev_odds&&h.prev_odds!==h.odds?`<div class="lv ${h.odds<h.prev_odds?'dn':'upx'}">${h.odds<h.prev_odds?'↓':'↑'}${h.prev_odds}</div>`:''}<div class="pop">${h.pop?h.pop+'人気':''}${h.mkt_p!=null?' '+Math.round(h.mkt_p*100)+'%':''}</div></td>
     ${mvs?`<td class="r"><span class="mv ${h.mv10_2>0.15?'up':''}">${h.mv10_2!=null?pct(h.mv10_2):'-'}</span><div class="pop">${h.o10&&h.o2?h.o10+'→'+h.o2:''}</div>${h.mv60_2!=null?`<div class="pop">1時間前比 <b class="${h.mv60_2<=-0.3?'mvt':''}">${pct(h.mv60_2)}</b></div>`:''}</td>`:''}
     <td class="r"><span class="sc ${isTop(r,h)?'s1':''}">${h.score??'—'}</span>${isN&&h.p_place!=null?`<div class="pop">3着内${Math.round(h.p_place*100)}%</div>`:''}</td>
-    ${isN&&r.has_ext?`<td class="r"><span class="sc">${h.ext??'-'}</span><div class="pop">${h.ext_sbo!=null?'水'+h.ext_sbo:''}${h.ext_kayo!=null?' か'+h.ext_kayo:''}</div></td>`:''}
+    ${isN&&r.has_ext?`<td class="r"><span class="sc">${h.ext??'-'}</span><div class="pop">${h.ext_sbo!=null?'水'+h.ext_sbo:''}${h.ext_kayo!=null?' か'+h.ext_kayo:''}${h.ext_knavi!=null?' ナ'+h.ext_knavi:''}</div></td>`:''}
     ${isN?`<td class="r">${h.ev??'-'}<div class="pop">${h.fair?'適正'+h.fair:''}</div></td>`:''}</tr>`).join('');
   return `<div class="card"><div class="rh"><div class="rt">${r.place_name}${r.rno}R ${r.race_name||''}</div><div class="time">${r.post_time||''}</div></div>
   <div class="meta">${r.surface||''}${r.distance||''}m　${r.weather||''} ${r.going||''}${done(r)?'　<b>発走済み</b>':''}</div>

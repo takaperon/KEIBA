@@ -4,6 +4,8 @@
 1 リクエストは小さな JSON で、間隔は最低 3 秒。データは公開の場所に置かない（Actions キャッシュ）。
 """
 import argparse, gzip, json, os, re, sys, time, datetime, urllib.request
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from keiba import ext
 UA = 'Mozilla/5.0 (compatible; KEIBA-personal/0.1; +https://github.com/takaperon)'
 N = 'https://nar.netkeiba.com'
 MARKS = [60, 45, 30, 15, 10, 5, 2, -3]  # 発走の何分前（マイナスは発走後）
@@ -32,6 +34,7 @@ def main():
     a = ap.parse_args()
     deadline = time.time() + a.max_minutes * 60
     os.makedirs(f'{a.data}/odds', exist_ok=True)
+    os.makedirs(f'{a.data}/knavi', exist_ok=True)
     day = None; races = {}; done = set(); n_snap = 0; errors = 0; next_list = 0
     while time.time() < deadline:
         t = now()
@@ -43,6 +46,11 @@ def main():
                 with gzip.open(fn, 'rt') as f:
                     for l in f:
                         x = json.loads(l); done.add((x['race_id'], x['mark']))
+            kf = f'{a.data}/knavi/{day}.jsonl.gz'
+            if os.path.exists(kf):
+                with gzip.open(kf, 'rt') as f:
+                    for l in f:
+                        done.add((json.loads(l)['race_id'], 'knavi'))
             next_list = 0
         if time.time() >= next_list:
             try:
@@ -75,6 +83,19 @@ def main():
                 done.add((rid, mk)); n_snap += 1
             except Exception:  # noqa
                 errors += 1
+        # 競馬ナビのAI指数（当日しか見られないので、発走60分前〜発走までに各レース1回だけ記録）
+        for rid, post in races.items():
+            if (rid, 'knavi') in done or not (post - datetime.timedelta(minutes=60) <= t < post):
+                continue
+            try:
+                idx = ext.knavi_race(get(ext.knavi_url(day, rid[4:6], int(rid[10:12]))))
+                if idx:
+                    with gzip.open(f'{a.data}/knavi/{day}.jsonl.gz', 'at') as f:
+                        f.write(json.dumps({'race_id': rid, 'at': now().strftime('%H:%M'), 'idx': idx}) + '\n')
+                done.add((rid, 'knavi'))
+            except Exception:  # noqa
+                errors += 1
+                done.add((rid, 'knavi'))
         # 今日のレースが全部終わったら、翌日の朝まで待つ（ただし max-minutes 内）
         if races and all((rid, MARKS[-1]) in done or races[rid] + datetime.timedelta(minutes=10) < t for rid in races):
             if t.hour >= 21:

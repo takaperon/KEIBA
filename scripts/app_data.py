@@ -166,16 +166,36 @@ try:
             if k and k[0] == day:
                 for rno, v in ext.kayo_post(get(u).decode('utf-8', 'replace')).items():
                     kayo[(k[1], rno)] = v
+        knavi = {}
+        kf = f'oddsdata/knavi/{day}.jsonl.gz'
+        if os.path.exists(kf):
+            with gzip.open(kf, 'rt') as f:
+                for l in f:
+                    x = json.loads(l); knavi[x['race_id']] = {int(k): v for k, v in x['idx'].items()}
+        for rr in races:
+            if rr['id'] not in knavi:
+                try:
+                    knavi[rr['id']] = ext.knavi_race(get(ext.knavi_url(day, rr['id'][4:6], int(rr['id'][10:12]))).decode('utf-8', 'replace'))
+                except Exception as e:  # noqa
+                    print('knavi ERR', rr['id'], e)
+        def dev(vals):  # レース内の偏差値（サイトごとに物差しが違うのでそろえてから平均する）
+            xs = [v for v in vals.values() if v is not None]
+            if len(xs) < 3:
+                return {}
+            m = sum(xs) / len(xs); sd = (sum((x - m) ** 2 for x in xs) / len(xs)) ** .5 or 1
+            return {k: 50 + 10 * (v - m) / sd for k, v in vals.items() if v is not None}
         for rr in races:
             key = (rr['id'][4:6], int(rr['id'][10:12]))
-            sb, ky = sbo.get(key) or {}, kayo.get(key) or {}
+            sb, ky, kn = sbo.get(key) or {}, kayo.get(key) or {}, knavi.get(rr['id']) or {}
+            raw = {'sbo': {n: (v or {}).get('avg') for n, v in sb.items()}, 'kayo': dict(ky), 'knavi': dict(kn)}
+            devs = {k: dev(v) for k, v in raw.items()}
             for h in rr['runners']:
-                a = (sb.get(h['num']) or {}).get('avg'); b = ky.get(h['num'])
-                h['ext_sbo'] = a; h['ext_kayo'] = b
-                vals = [x for x in (a, b) if x is not None]
-                h['ext'] = round(sum(vals) / len(vals), 1) if vals else None
+                h['ext_sbo'] = raw['sbo'].get(h['num']); h['ext_kayo'] = raw['kayo'].get(h['num']); h['ext_knavi'] = raw['knavi'].get(h['num'])
+                ds = [devs[k].get(h['num']) for k in devs if devs[k].get(h['num']) is not None]
+                h['ext'] = round(sum(ds) / len(ds), 1) if ds else None
+                h['ext_n'] = len(ds)
             rr['has_ext'] = any(h.get('ext') is not None for h in rr['runners'])
-        out['notes']['chiho_ext'] = f'外部指数：水分ボンバー {len(sbo)}R・かよちん {len(kayo)}R'
+        out['notes']['chiho_ext'] = f'外部指数：水分ボンバー {len(sbo)}R・かよちん {len(kayo)}R・競馬ナビ {sum(1 for v in knavi.values() if v)}R'
     except Exception as e:  # noqa
         out['notes']['chiho_ext'] = '外部指数を取得できず：' + str(e)[:100]
     out['modes']['chiho'] = races
