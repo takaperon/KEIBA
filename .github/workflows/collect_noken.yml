@@ -1,0 +1,40 @@
+name: collect_noken
+# 能力検査の結果を各主催者の公式ページから集める（キャッシュに保存。状況の件数だけ noken-status ブランチへ）
+on:
+  schedule:
+    - cron: '30 21 * * *'
+    - cron: '30 8 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/collect_noken.py', 'keiba/noken.py', '.github/workflows/collect_noken.yml']
+permissions:
+  contents: write
+concurrency:
+  group: collect_noken
+jobs:
+  c:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: nokendata
+          key: noken-data-${{ github.run_id }}
+          restore-keys: noken-data-
+      - run: sudo apt-get install -y -q poppler-utils >/dev/null && pip install -q beautifulsoup4 lxml
+      - run: python3 scripts/collect_noken.py nokendata
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: nokendata
+          key: noken-data-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: status (counts only)
+        if: always()
+        run: |
+          mkdir -p ns && cp nokendata/status.json ns/ 2>/dev/null || echo '{}' > ns/status.json
+          cd ns && git init -q && git checkout -q -b noken-status
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m s
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" noken-status
