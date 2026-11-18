@@ -45,6 +45,15 @@ def main():
         st['dates_done'] = sorted(done_dates)
         json.dump(st, open(sp, 'w'))
 
+    # 払戻がまだ載っていなかったレース（取った時点で未掲載）がある日は取り直す（同じIDの後の行が優先される）
+    nopay = {}
+    for fn in sorted(os.listdir(f'{a.data}/races'))[-2:]:
+        with gzip.open(f'{a.data}/races/{fn}', 'rt') as f:
+            for l in f:
+                r = json.loads(l)
+                nopay[r['id']] = not r.get('payouts')
+    redo = {rid[:4] + rid[6:10] for rid, bad in nopay.items() if bad}
+    done_dates -= redo
     day = datetime.date.today() - datetime.timedelta(days=1)
     oldest = datetime.datetime.strptime(a.oldest, '%Y%m%d').date()
     stop = None
@@ -60,7 +69,7 @@ def main():
             have = set()
             if os.path.exists(fn):
                 with gzip.open(fn, 'rt') as f:
-                    have = {json.loads(l)['id'] for l in f}
+                    have = {r['id'] for r in map(json.loads, f) if r.get('payouts')}
             ok = True
             with gzip.open(fn, 'at') as f:
                 for rid in ids:
