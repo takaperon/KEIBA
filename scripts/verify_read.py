@@ -51,6 +51,10 @@ for fn in sorted(os.listdir(f'{D}/races')):
 byp = {}
 for r in hist.values():
     byp.setdefault(r['place'], []).append(r)
+pay_missing = {}
+for r in hist.values():
+    m = pay_missing.setdefault(r['date'][:6], [0, 0]); m[1] += 1; m[0] += not r.get('payouts')
+rep['nar_hist_no_payout_by_month'] = pay_missing
 sbo_cache, kayo_cache = {}, {}
 for code, name in nk.NAR_PLACES.items():
     if code == '65':
@@ -77,6 +81,8 @@ for code, name in nk.NAR_PLACES.items():
             for n, h in ref.items():
                 o['result_pos'][1] += 1; o['result_pos'][0] += (res['runners'].get(n) or {}).get('pos') == h.get('pos')
             a = [x['yen'] for x in (res['payouts'].get('単勝') or [])]; b = [x['yen'] for x in (r['payouts'].get('単勝') or [])]
+            if not b:
+                o.setdefault('db_no_payout', 0); o['db_no_payout'] += 1
             o['result_tan'][1] += 1; o['result_tan'][0] += bool(a) and sorted(a) == sorted(b)
             if not (a and sorted(a) == sorted(b)):
                 DBG.append({'nar_tan': rid, 'result_page': res['payouts'], 'db': r['payouts']})
@@ -175,7 +181,8 @@ for name, rs in sorted(jp.items()):
                 if t is not None and x.get('tan') is not None:
                     o['tan_odds'][1] += 1; o['tan_odds'][0] += eqf(t, x['tan'])
             for k, key in (('単勝', 'pay_tan'), ('3連単', 'pay_3tan')):
-                a = sorted(p['yen'] for p in (r['payouts'].get(k) or [])); b = sorted(p['yen'] for p in (n['payouts'].get(k) or []))
+                nkp = {kk.replace('三連', '3連'): vv for kk, vv in n['payouts'].items()}  # netkeiba は「三連単」表記
+                a = sorted(p['yen'] for p in (r['payouts'].get(k) or [])); b = sorted(p['yen'] for p in (nkp.get(k) or []))
                 o[key][1] += 1; o[key][0] += bool(a) and a == b
                 if not (a and a == b):
                     DBG.append({'jra_pay': nid, 'kind': k, 'jra_keys': list(r['payouts']), 'nk_keys': list(n['payouts']), 'jra': a, 'nk': b})

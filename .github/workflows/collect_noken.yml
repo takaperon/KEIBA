@@ -34,6 +34,7 @@ jobs:
         if: always()
         run: |
           mkdir -p ns && cp nokendata/status.json ns/ 2>/dev/null || echo '{}' > ns/status.json
+          [ -f nokendata/noken.jsonl ] && bash scripts/seal.sh nokendata/noken.jsonl ns/noken.sealed || true
           cd ns && git init -q && git checkout -q -b noken-status
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m s
