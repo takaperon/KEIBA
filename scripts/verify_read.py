@@ -39,6 +39,7 @@ def eqf(a, b, tol=0.05):
 
 
 rep = {'nar': {}, 'nar_today': {}, 'jra': {}}
+DBG = []  # 食い違いの中身（暗号化して置く）
 
 # ---------- 地方 ----------
 D = sys.argv[1]
@@ -77,6 +78,8 @@ for code, name in nk.NAR_PLACES.items():
                 o['result_pos'][1] += 1; o['result_pos'][0] += (res['runners'].get(n) or {}).get('pos') == h.get('pos')
             a = [x['yen'] for x in (res['payouts'].get('単勝') or [])]; b = [x['yen'] for x in (r['payouts'].get('単勝') or [])]
             o['result_tan'][1] += 1; o['result_tan'][0] += bool(a) and sorted(a) == sorted(b)
+            if not (a and sorted(a) == sorted(b)):
+                DBG.append({'nar_tan': rid, 'result_page': res['payouts'], 'db': r['payouts']})
         except Exception as e:  # noqa
             o['errors'].append('result ' + str(e)[:60])
         try:
@@ -98,6 +101,9 @@ for code, name in nk.NAR_PLACES.items():
             if u:
                 v = ext.sbo_race(T(u))
                 o['sbo'][0] += sum(1 for n in ref if (v.get(n) or {}).get('avg') is not None)
+                miss = [n for n in ref if (v.get(n) or {}).get('avg') is None]
+                if miss:
+                    DBG.append({'sbo': rid, 'miss': [(n, ref[n].get('pos_text'), v.get(n)) for n in miss]})
         except Exception as e:  # noqa
             o['errors'].append('sbo ' + str(e)[:60])
         # かよちん
@@ -171,10 +177,14 @@ for name, rs in sorted(jp.items()):
             for k, key in (('単勝', 'pay_tan'), ('3連単', 'pay_3tan')):
                 a = sorted(p['yen'] for p in (r['payouts'].get(k) or [])); b = sorted(p['yen'] for p in (n['payouts'].get(k) or []))
                 o[key][1] += 1; o[key][0] += bool(a) and a == b
+                if not (a and a == b):
+                    DBG.append({'jra_pay': nid, 'kind': k, 'jra_keys': list(r['payouts']), 'nk_keys': list(n['payouts']), 'jra': a, 'nk': b})
         except Exception as e:  # noqa
             o['errors'].append(nid + ' ' + str(e)[:60])
     rep['jra'][name] = o
 
 os.makedirs('vout', exist_ok=True)
 json.dump(rep, open('vout/verify.json', 'w'), ensure_ascii=False, indent=1)
+json.dump(DBG, open('vout/debug.json', 'w'), ensure_ascii=False, indent=1)
+subprocess.run('bash scripts/seal.sh vout/debug.json vout/debug.sealed', shell=True, check=True)
 print(json.dumps(rep, ensure_ascii=False, indent=1))
