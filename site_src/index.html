@@ -56,7 +56,7 @@ const WT=['','#111','#fff','#fff','#fff','#111','#fff','#111','#111'];
 let mode='chiho',place=null,rno=null,sk='num';
 const mvc=h=>h.mv10_2==null?'':(h.mv10_2<=-0.30?'mvA':(h.mv10_2<=-0.15?'mvB':''));
 const pct=v=>v==null?'':(v>0?'+':'')+Math.round(v*100)+'%';
-const SK={pos:h=>h.pos==null?null:-h.pos,mv:h=>h.mv10_2==null?null:-h.mv10_2,mv60:h=>h.mv60_2==null?null:-h.mv60_2,num:h=>h.num,odds:h=>h.odds,mkt:h=>h.mkt_p,score:h=>h.score,pp:h=>h.p_place,fair:h=>h.fair,ev:h=>h.ev};
+const SK={pos:h=>h.pos==null?null:-h.pos,mv:h=>h.mv10_2==null?null:-h.mv10_2,mv60:h=>h.mv60_2==null?null:-h.mv60_2,ext:h=>h.ext,num:h=>h.num,odds:h=>h.odds,mkt:h=>h.mkt_p,score:h=>h.score,pp:h=>h.p_place,fair:h=>h.fair,ev:h=>h.ev};
 function setS(k){sk=(sk===k?'num':k);render()}
 function sorted(rs){const f=SK[sk];return [...rs].sort((a,b)=>{if(sk==='num')return a.num-b.num;const x=f(a),y=f(b);if(x==null&&y==null)return a.num-b.num;if(x==null)return 1;if(y==null)return -1;return y-x||a.num-b.num})}
 const TH=(k,l,r)=>`<th class="s ${r?'r':''} ${sk===k?'on':''}" onclick="setS('${k}')">${l}${sk===k&&k!=='num'?'<span class=ar> ▼</span>':''}</th>`;
@@ -82,7 +82,7 @@ function render(){
   const r=R().find(x=>x.place_name===place&&x.rno===rno);
   main.innerHTML=note()+(r?race(r):'');
 }
-function note(){const n=D.notes[mode]||'';const e=D.notes[mode+'_error'];return `<div class="warn">${n}${e?'<br>取得エラー：'+e:''}</div>`}
+function note(){const n=(D.notes[mode]||'')+(mode==='chiho'&&D.notes.chiho_ext?'<br>'+D.notes.chiho_ext:'');const e=D.notes[mode+'_error'];return `<div class="warn">${n}${e?'<br>取得エラー：'+e:''}</div>`}
 function race(r){
   const isN=mode==='chiho';
   const fin=r.runners.some(h=>h.pos!=null);const mvs=isN&&r.has_moves;
@@ -91,11 +91,12 @@ function race(r){
     <td class="r">${h.final_tan??h.odds??'-'}${h.prev_odds&&h.prev_odds!==h.odds?`<div class="lv ${h.odds<h.prev_odds?'dn':'upx'}">${h.odds<h.prev_odds?'↓':'↑'}${h.prev_odds}</div>`:''}<div class="pop">${h.pop?h.pop+'人気':''}${h.mkt_p!=null?' '+Math.round(h.mkt_p*100)+'%':''}</div></td>
     ${mvs?`<td class="r"><span class="mv ${h.mv10_2>0.15?'up':''}">${h.mv10_2!=null?pct(h.mv10_2):'-'}</span><div class="pop">${h.o10&&h.o2?h.o10+'→'+h.o2:''}</div>${h.mv60_2!=null?`<div class="pop">1時間前比 <b class="${h.mv60_2<=-0.3?'mvt':''}">${pct(h.mv60_2)}</b></div>`:''}</td>`:''}
     <td class="r"><span class="sc ${isTop(r,h)?'s1':''}">${h.score??'—'}</span>${isN&&h.p_place!=null?`<div class="pop">3着内${Math.round(h.p_place*100)}%</div>`:''}</td>
+    ${isN&&r.has_ext?`<td class="r"><span class="sc">${h.ext??'-'}</span><div class="pop">${h.ext_sbo!=null?'水'+h.ext_sbo:''}${h.ext_kayo!=null?' か'+h.ext_kayo:''}</div></td>`:''}
     ${isN?`<td class="r">${h.ev??'-'}<div class="pop">${h.fair?'適正'+h.fair:''}</div></td>`:''}</tr>`).join('');
   return `<div class="card"><div class="rh"><div class="rt">${r.place_name}${r.rno}R ${r.race_name||''}</div><div class="time">${r.post_time||''}</div></div>
   <div class="meta">${r.surface||''}${r.distance||''}m　${r.weather||''} ${r.going||''}${done(r)?'　<b>発走済み</b>':''}</div>
   <span class="verdict">判定：${r.verdict}</span>
-  <div class="tw"><table><tr>${fin?TH('pos','着',0):''}${TH('num','番',0)}<th>馬名／騎手</th>${TH('odds','単勝<br>人気･市場',1)}${mvs?TH('mv','10→2<br>分前',1):''}${TH('score',isN?'SCORE<br>3着内':'暫定<br>指数',1)}${isN?TH('ev','EV<br>適正',1):''}</tr>${rows}</table></div>
+  <div class="tw"><table><tr>${fin?TH('pos','着',0):''}${TH('num','番',0)}<th>馬名／騎手</th>${TH('odds','単勝<br>人気･市場',1)}${mvs?TH('mv','10→2<br>分前',1):''}${TH('score',isN?'SCORE<br>3着内':'暫定<br>指数',1)}${isN&&r.has_ext?TH('ext','外部<br>指数',1):''}${isN?TH('ev','EV<br>適正',1):''}</tr>${rows}</table></div>
   ${r.payouts&&Object.keys(r.payouts).length?`<div class="pay">${Object.entries(r.payouts).map(([k,v])=>`<div><b>${k}</b><span>${v.map(x=>x.combo+'　'+Number(x.yen).toLocaleString()+'円').join('<br>')}</span></div>`).join('')}</div>`:''}
   ${mvs?`<div class="leg"><span><i style="background:var(--hot)"></i>10分前→2分前で単勝オッズ30%以上下落（急に売れた）</span><span><i style="background:var(--warn)"></i>15〜30%下落</span><span class="up">＋は売れなかった</span><span onclick="setS('mv60')" style="text-decoration:underline">下段＝1時間前→2分前の変化（ここを押すと1時間前比で売れた順）</span></div>`:''}
   <div class="lg">${isN?'HORSE SCORE＝オッズを使わない能力指数（50が平均）。3着内＝3着以内に入る確率。適正＝1着確率から計算した単勝の理論オッズ。EV＝1着確率×実際の単勝オッズ（参考値）。見出しを押すとその項目の大きい順、もう一度押すと馬番順。':'暫定指数＝近4走の着差をレースの格で補正しただけのもの（未検証）。見出しを押すとその項目の大きい順、もう一度押すと馬番順。'}</div></div>`;

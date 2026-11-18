@@ -9,7 +9,7 @@ import gzip, json, os, re, sys, time, datetime, urllib.request
 import numpy as np, pandas as pd, lightgbm as lgb
 from sklearn.isotonic import IsotonicRegression
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from keiba import nk, nar_features as NF, jra
+from keiba import nk, nar_features as NF, jra, ext
 from keiba.provisional import score_race
 
 UA = 'Mozilla/5.0 (compatible; KEIBA-personal/0.1; +https://github.com/takaperon)'
@@ -151,6 +151,33 @@ try:
             rr['payouts'] = {k: v for k, v in res['payouts'].items() if k in ('単勝', '複勝', 'ワイド', '馬連', '馬単', '3連複', '3連単')}
         except Exception as e:  # noqa
             print('result ERR', rr['id'], e)
+    # 外部指数（水分ボンバー・かよちん）：当日分。検証前なので参考表示のみ
+    try:
+        sbo = {}
+        for code, rno, u in ext.sbo_day(get(f'https://nar.k-ba.net/{day}/').decode('utf-8', 'replace'), day):
+            try:
+                sbo[(code, rno)] = ext.sbo_race(get(u).decode('utf-8', 'replace'))
+            except Exception as e:  # noqa
+                print('sbo ERR', u, e)
+        kayo = {}
+        sm = get(f'https://kayochinkeiba.com/sitemap-posttype-post.{day[:6]}.xml').decode('utf-8', 'replace')
+        for u in re.findall(r'<loc>([^<]+)</loc>', sm):
+            k = ext.kayo_url_key(u)
+            if k and k[0] == day:
+                for rno, v in ext.kayo_post(get(u).decode('utf-8', 'replace')).items():
+                    kayo[(k[1], rno)] = v
+        for rr in races:
+            key = (rr['id'][4:6], int(rr['id'][10:12]))
+            sb, ky = sbo.get(key) or {}, kayo.get(key) or {}
+            for h in rr['runners']:
+                a = (sb.get(h['num']) or {}).get('avg'); b = ky.get(h['num'])
+                h['ext_sbo'] = a; h['ext_kayo'] = b
+                vals = [x for x in (a, b) if x is not None]
+                h['ext'] = round(sum(vals) / len(vals), 1) if vals else None
+            rr['has_ext'] = any(h.get('ext') is not None for h in rr['runners'])
+        out['notes']['chiho_ext'] = f'外部指数：水分ボンバー {len(sbo)}R・かよちん {len(kayo)}R'
+    except Exception as e:  # noqa
+        out['notes']['chiho_ext'] = '外部指数を取得できず：' + str(e)[:100]
     out['modes']['chiho'] = races
     out['notes']['chiho'] = ('独自指数 v2（オッズ不使用・過去2年で学習）。テスト1年で3着以内AUC0.79・確率の当たり具合は良好だが、'
                              'EV買いの回収率は64〜75%で100%に届かず、モデルと市場がずれた馬は市場どおりの結果だった。'
