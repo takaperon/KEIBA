@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KEIBA</title>
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0b0e14"><link rel="manifest" href="manifest.json">
+<style>
+:root{--bg:#0b0e14;--card:#141a24;--line:#232c3b;--tx:#e8ecf3;--mut:#8a96a8;--neo:#2ef2c8;--hot:#ff4d8d;--warn:#ffb020;--nar:#7c8cff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif}
+header{position:sticky;top:0;z-index:5;background:rgba(11,14,20,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 14px 8px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+h1{margin:0;font-size:19px;letter-spacing:.12em}
+.sw{display:flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px}
+.sw button{border:0;background:none;color:var(--mut);font-weight:800;padding:6px 16px;border-radius:999px;font-size:14px}
+.sw button.on.c{background:var(--neo);color:#04211b}.sw button.on.n{background:var(--nar);color:#0b0e2a}
+.sub{color:var(--mut);font-size:12px;margin-top:4px}
+.tabs{display:flex;gap:6px;margin-top:10px;overflow-x:auto}
+.tab{flex:0 0 auto;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--mut);font-weight:600}
+.tab.on{border-color:var(--ac);color:var(--ac)}
+.rn{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px}
+.rn::-webkit-scrollbar,.tabs::-webkit-scrollbar{display:none}
+.rn button{flex:0 0 auto;width:42px;padding:6px 0;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--tx);font-weight:700}
+.rn button.done{opacity:.4}.rn button.on{background:var(--ac);color:#04111b;border-color:var(--ac)}
+main{padding:12px 12px 40px}
+.warn{border:1px solid rgba(255,176,32,.4);background:rgba(255,176,32,.08);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:12.5px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+.rh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.rt{font-size:17px;font-weight:800}.meta{color:var(--mut);font-size:12.5px;margin-top:4px}
+.time{font-weight:700;color:var(--ac);white-space:nowrap}
+.verdict{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mut);font-size:12px;font-weight:700}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}.tw{overflow-x:auto;margin:0 -6px}
+th{color:var(--mut);font-weight:500;font-size:10.5px;text-align:left;padding:4px 2px;border-bottom:1px solid var(--line)}
+th.s{cursor:pointer;user-select:none}th.s.on{color:var(--ac);font-weight:800}th.s .ar{font-size:9px}
+td{padding:7px 2px;border-bottom:1px solid var(--line);vertical-align:middle}
+.w{display:inline-block;width:24px;height:24px;line-height:24px;border-radius:6px;font-weight:800;font-size:13px;text-align:center}
+.nm{font-weight:700;font-size:12.5px;line-height:1.25}.jk{color:var(--mut);font-size:10.5px}
+.r{text-align:right;white-space:nowrap}.pop{color:var(--mut);font-size:10.5px}
+.sc{font-weight:800}.s1{color:var(--ac)}
+tr.cx{opacity:.35}
+tr.mvA{background:linear-gradient(90deg,rgba(255,77,141,.28),transparent 85%)}tr.mvB{background:linear-gradient(90deg,rgba(255,176,32,.20),transparent 85%)}
+.mv{font-weight:800;font-size:11px}.mvA .mv{color:var(--hot)}.mvB .mv{color:var(--warn)}.up{color:#6fa8ff}.mvt{color:var(--hot)}
+.ps{display:inline-block;min-width:22px;padding:1px 5px;border-radius:6px;font-weight:800;font-size:12px;background:#2a3344;color:var(--tx);text-align:center}
+.ps.p1{background:#f4d03f;color:#111}.ps.p2{background:#cfd6e2;color:#111}.ps.p3{background:#d08a4a;color:#111}
+.pay{margin-top:10px;border-top:1px solid var(--line);padding-top:8px;font-size:12.5px}.pay div{display:flex;justify-content:space-between;padding:2px 0}.pay b{color:var(--mut);font-weight:600;width:56px}
+.leg{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--mut);margin-top:6px}.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.lg{color:var(--mut);font-size:11.5px;margin-top:8px}
+.empty{color:var(--mut);text-align:center;padding:40px 0}
+.lv{color:var(--neo);font-size:11px}.dn{color:var(--hot)}.upx{color:#6fa8ff}
+</style></head><body>
+<header><div class="top"><h1>KEIBA</h1><button id="rf" onclick="refresh()" style="margin-left:auto;margin-right:8px;border:1px solid var(--line);background:var(--card);color:var(--tx);border-radius:999px;padding:6px 12px;font-weight:800">↻ 更新</button><div class="sw"><button id="bc" class="c" onclick="setM('chuo')">中央</button><button id="bn" class="n" onclick="setM('chiho')">地方</button></div></div>
+<div class="sub" id="sub"></div><div class="tabs" id="tabs"></div><div class="rn" id="rn"></div></header>
+<main id="main"></main>
+<script>
+let D={date:"",built_at:"",modes:{},notes:{}};let LIVE={};
+const WC=['','#f2f2f2','#222','#e0303b','#2f6fe0','#f4d03f','#2fae5a','#ff8c2e','#ff6fb1'];
+const WT=['','#111','#fff','#fff','#fff','#111','#fff','#111','#111'];
+let mode='chiho',place=null,rno=null,sk='num';
+const mvc=h=>h.mv10_2==null?'':(h.mv10_2<=-0.30?'mvA':(h.mv10_2<=-0.15?'mvB':''));
+const pct=v=>v==null?'':(v>0?'+':'')+Math.round(v*100)+'%';
+const SK={pos:h=>h.pos==null?null:-h.pos,mv:h=>h.mv10_2==null?null:-h.mv10_2,mv60:h=>h.mv60_2==null?null:-h.mv60_2,num:h=>h.num,odds:h=>h.odds,mkt:h=>h.mkt_p,score:h=>h.score,pp:h=>h.p_place,fair:h=>h.fair,ev:h=>h.ev};
+function setS(k){sk=(sk===k?'num':k);render()}
+function sorted(rs){const f=SK[sk];return [...rs].sort((a,b)=>{if(sk==='num')return a.num-b.num;const x=f(a),y=f(b);if(x==null&&y==null)return a.num-b.num;if(x==null)return 1;if(y==null)return -1;return y-x||a.num-b.num})}
+const TH=(k,l,r)=>`<th class="s ${r?'r':''} ${sk===k?'on':''}" onclick="setS('${k}')">${l}${sk===k&&k!=='num'?'<span class=ar> ▼</span>':''}</th>`;
+const jst=()=>new Date(Date.now()+9*3600e3);
+const today=jst().toISOString().slice(0,10).replace(/-/g,'');
+const done=r=>today>D.date||(today===D.date&&(r.post_time||'99')<jst().toISOString().slice(11,16));
+const R=()=>D.modes[mode]||[];
+function setM(m){mode=m;try{localStorage.setItem('km',m)}catch(e){};place=null;init();scrollTo(0,0)}
+function init(){
+  document.documentElement.style.setProperty('--ac',mode==='chuo'?'var(--neo)':'var(--nar)');
+  bc.classList.toggle('on',mode==='chuo');bn.classList.toggle('on',mode==='chiho');
+  sub.textContent=D.date?`${D.date.slice(0,4)}/${D.date.slice(4,6)}/${D.date.slice(6)}　データ作成 ${D.built_at.slice(11)}`+(LIVE.at?`　オッズ ${LIVE.at} 時点（${LIVE.race}）`:'（オッズはデータ作成時点）'):'';
+  const ps=[...new Set(R().map(r=>r.place_name))];
+  if(!ps.includes(place))place=ps[0];
+  const nx=R().find(r=>r.place_name===place&&!done(r));rno=nx?nx.rno:(R().find(r=>r.place_name===place)||{}).rno;
+  render();
+}
+function render(){
+  const ps=[...new Set(R().map(r=>r.place_name))];
+  tabs.innerHTML=ps.map(p=>`<button class="tab ${p===place?'on':''}" onclick="place='${p}';const nx=R().find(r=>r.place_name===place&&!done(r));rno=nx?nx.rno:1;render()">${p}</button>`).join('');
+  if(!ps.length){rn.innerHTML='';main.innerHTML=note()+`<div class="empty">${mode==='chuo'?'中央':'地方'}は今日の開催がありません</div>`;return}
+  rn.innerHTML=R().filter(r=>r.place_name===place).map(r=>`<button class="${r.rno===rno?'on':''} ${done(r)?'done':''}" onclick="rno=${r.rno};LIVE={};render();scrollTo(0,0)">${r.rno}R</button>`).join('');
+  const r=R().find(x=>x.place_name===place&&x.rno===rno);
+  main.innerHTML=note()+(r?race(r):'');
+}
+function note(){const n=D.notes[mode]||'';const e=D.notes[mode+'_error'];return `<div class="warn">${n}${e?'<br>取得エラー：'+e:''}</div>`}
+function race(r){
+  const isN=mode==='chiho';
+  const fin=r.runners.some(h=>h.pos!=null);const mvs=isN&&r.has_moves;
+  const rows=sorted(r.runners).map(h=>`<tr class="${h.cancel?'cx':''} ${mvs?mvc(h):''}">${fin?`<td>${h.pos!=null?`<span class="ps ${h.pos<=3?'p'+h.pos:''}">${h.pos}</span>`:`<span class="pop">${h.pos_text||''}</span>`}</td>`:''}<td><span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'}">${h.num}</span></td>
+    <td><div class="nm">${h.horse}</div><div class="jk">${h.jockey||''} ${h.sexage||''} ${h.kg||''}${h.hw?`　${h.hw}(${h.hw_diff>0?'+':''}${h.hw_diff})`:''}${isN&&h.runs===0?'　初出':''}</div></td>
+    <td class="r">${h.final_tan??h.odds??'-'}${h.prev_odds&&h.prev_odds!==h.odds?`<div class="lv ${h.odds<h.prev_odds?'dn':'upx'}">${h.odds<h.prev_odds?'↓':'↑'}${h.prev_odds}</div>`:''}<div class="pop">${h.pop?h.pop+'人気':''}${h.mkt_p!=null?' '+Math.round(h.mkt_p*100)+'%':''}</div></td>
+    ${mvs?`<td class="r"><span class="mv ${h.mv10_2>0.15?'up':''}">${h.mv10_2!=null?pct(h.mv10_2):'-'}</span><div class="pop">${h.o10&&h.o2?h.o10+'→'+h.o2:''}</div>${h.mv60_2!=null?`<div class="pop">1時間前比 <b class="${h.mv60_2<=-0.3?'mvt':''}">${pct(h.mv60_2)}</b></div>`:''}</td>`:''}
+    <td class="r"><span class="sc ${isTop(r,h)?'s1':''}">${h.score??'—'}</span>${isN&&h.p_place!=null?`<div class="pop">3着内${Math.round(h.p_place*100)}%</div>`:''}</td>
+    ${isN?`<td class="r">${h.ev??'-'}<div class="pop">${h.fair?'適正'+h.fair:''}</div></td>`:''}</tr>`).join('');
+  return `<div class="card"><div class="rh"><div class="rt">${r.place_name}${r.rno}R ${r.race_name||''}</div><div class="time">${r.post_time||''}</div></div>
+  <div class="meta">${r.surface||''}${r.distance||''}m　${r.weather||''} ${r.going||''}${done(r)?'　<b>発走済み</b>':''}</div>
+  <span class="verdict">判定：${r.verdict}</span>
+  <div class="tw"><table><tr>${fin?TH('pos','着',0):''}${TH('num','番',0)}<th>馬名／騎手</th>${TH('odds','単勝<br>人気･市場',1)}${mvs?TH('mv','10→2<br>分前',1):''}${TH('score',isN?'SCORE<br>3着内':'暫定<br>指数',1)}${isN?TH('ev','EV<br>適正',1):''}</tr>${rows}</table></div>
+  ${r.payouts&&Object.keys(r.payouts).length?`<div class="pay">${Object.entries(r.payouts).map(([k,v])=>`<div><b>${k}</b><span>${v.map(x=>x.combo+'　'+Number(x.yen).toLocaleString()+'円').join('<br>')}</span></div>`).join('')}</div>`:''}
+  ${mvs?`<div class="leg"><span><i style="background:var(--hot)"></i>10分前→2分前で単勝オッズ30%以上下落（急に売れた）</span><span><i style="background:var(--warn)"></i>15〜30%下落</span><span class="up">＋は売れなかった</span><span onclick="setS('mv60')" style="text-decoration:underline">下段＝1時間前→2分前の変化（ここを押すと1時間前比で売れた順）</span></div>`:''}
+  <div class="lg">${isN?'HORSE SCORE＝オッズを使わない能力指数（50が平均）。3着内＝3着以内に入る確率。適正＝1着確率から計算した単勝の理論オッズ。EV＝1着確率×実際の単勝オッズ（参考値）。見出しを押すとその項目の大きい順、もう一度押すと馬番順。':'暫定指数＝近4走の着差をレースの格で補正しただけのもの（未検証）。見出しを押すとその項目の大きい順、もう一度押すと馬番順。'}</div></div>`;
+}
+function isTop(r,h){const m=Math.max(...r.runners.map(x=>x.score??-1e9));return h.score!=null&&h.score===m}
+
+// ---- 鍵（初回は #k=... のリンクで開くと保存される） ----
+const b2u=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+const u2b=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+function keyRaw(){try{const h=location.hash.match(/k=([A-Za-z0-9_\-]+)/);if(h){localStorage.setItem('keiba_key',h[1]);history.replaceState(null,'',location.pathname)}return localStorage.getItem('keiba_key')}catch(e){return null}}
+async function decryptData(o){const raw=b2u(keyRaw());
+  const pk=await crypto.subtle.importKey('pkcs8',raw,{name:'RSA-OAEP',hash:'SHA-256'},false,['decrypt']);
+  const k=await crypto.subtle.decrypt({name:'RSA-OAEP'},pk,b2u(o.k));
+  const ak=await crypto.subtle.importKey('raw',k,'AES-GCM',false,['decrypt']);
+  return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b2u(o.iv)},ak,b2u(o.d))))}
+async function sign(msg){const sk=await crypto.subtle.importKey('pkcs8',b2u(keyRaw()),{name:'RSA-PSS',hash:'SHA-256'},false,['sign']);
+  return u2b(await crypto.subtle.sign({name:'RSA-PSS',saltLength:32},sk,new TextEncoder().encode(msg)))}
+async function loadData(){const r=await fetch('data.json?'+Date.now(),{cache:'no-store'});D=await decryptData(await r.json())}
+async function liveOdds(r){if(!r||!r.id)return;const kind=mode==='chuo'?'jra':'nar';const ts=Math.floor(Date.now()/1000);
+  const sig=await sign(kind+'|'+r.id+'|'+ts);
+  const j=await (await fetch(`/api/odds?kind=${kind}&id=${r.id}&ts=${ts}&sig=${sig}`,{cache:'no-store'})).json();
+  if(j.error)throw new Error(j.error);
+  const tot=Object.values(j.odds).reduce((s,v)=>s+(v[0]?1/v[0]:0),0)||1;
+  for(const h of r.runners){const o=j.odds[h.num];if(!o||!o[0])continue;h.prev_odds=h.prev_odds??h.odds;h.odds=o[0];if(o[1])h.pop=o[1];h.mkt_p=1/o[0]/tot;if(h.p_win)h.ev=Math.round(h.p_win*o[0]*100)/100}
+  LIVE={at:j.at,race:`${r.place_name}${r.rno}R`}}
+async function refresh(){const btn=document.getElementById('rf');btn.textContent='更新中…';btn.disabled=true;
+  try{const cur={mode,place,rno};await loadData();mode=cur.mode;place=cur.place;rno=cur.rno;
+    const r=R().find(x=>x.place_name===place&&x.rno===rno);
+    if(r&&!done(r)){try{await liveOdds(r)}catch(e){LIVE={at:'取得できず（'+e.message+'）',race:''}}}
+    init();if(cur.place&&R().some(x=>x.place_name===cur.place)){place=cur.place;rno=cur.rno;render()}
+  }catch(e){main.innerHTML=`<div class="warn">データを開けませんでした（${e.message}）。鍵のリンクから一度開き直してください。</div>`}
+  btn.textContent='↻ 更新';btn.disabled=false}
+(async()=>{if(!keyRaw()){main.innerHTML='<div class="warn">この端末にはまだ鍵がありません。チャットで渡した「鍵つきリンク」から一度開いてください。</div>';return}
+  try{const m=localStorage.getItem('km');if(m)mode=m}catch(e){}
+  try{await loadData()}catch(e){main.innerHTML=`<div class="warn">データを開けませんでした（${e.message}）</div>`;return}
+  if(!(D.modes[mode]||[]).length&&(D.modes[mode==='chuo'?'chiho':'chuo']||[]).length)mode=mode==='chuo'?'chiho':'chuo';
+  init()})();
+</script></body></html>

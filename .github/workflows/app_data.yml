@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['scripts/app_data.py', 'scripts/app_day.txt', 'keiba/nk.py', '.github/workflows/app_data.yml']
+    paths: ['scripts/app_data.py', 'scripts/app_day.txt', 'site_src/**', 'keiba/nk.py', '.github/workflows/app_data.yml']
 permissions:
   contents: write
 concurrency:
@@ -34,7 +34,7 @@ jobs:
           restore-keys: nar-odds-
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - run: pip install -q numpy pandas scikit-learn lightgbm beautifulsoup4 lxml
+      - run: pip install -q numpy pandas scikit-learn lightgbm beautifulsoup4 lxml cryptography
       - run: python3 scripts/app_data.py nardata
       - name: seal and push
         run: |
@@ -43,3 +43,10 @@ jobs:
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m app-data
           git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" app-data
+      - name: build live site (Cloudflare Pages の site ブランチ)
+        run: |
+          rm -rf st && mkdir st && cp -r site_src/. st/ && python3 keiba/seal2.py appout/app.json st/data.json
+          cd st && git init -q && git checkout -q -b site
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m site
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" site

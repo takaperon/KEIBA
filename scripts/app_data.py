@@ -151,8 +151,6 @@ try:
             rr['payouts'] = {k: v for k, v in res['payouts'].items() if k in ('単勝', '複勝', 'ワイド', '馬連', '馬単', '3連複', '3連単')}
         except Exception as e:  # noqa
             print('result ERR', rr['id'], e)
-    for rr in races:
-        rr.pop('id', None)
     out['modes']['chiho'] = races
     out['notes']['chiho'] = ('独自指数 v2（オッズ不使用・過去2年で学習）。テスト1年で3着以内AUC0.79・確率の当たり具合は良好だが、'
                              'EV買いの回収率は64〜75%で100%に届かず、モデルと市場がずれた馬は市場どおりの結果だった。'
@@ -174,7 +172,7 @@ try:
             d = jra.parse_card(jra.decode(get('https://www.jra.go.jp/JRADB/accessD.html', ('cname=' + rc).encode())))
             d.update(jra.race_key(rc)); score_race(d)
             races.append({k: d.get(k) for k in ('place_name', 'rno', 'race_name', 'grade', 'post_time', 'surface', 'distance', 'going_turf', 'going_dirt', 'weather')} |
-                         {'going': d.get('going_turf') or d.get('going_dirt'), 'verdict': '見送り',
+                         {'going': d.get('going_turf') or d.get('going_dirt'), 'verdict': '見送り', 'id': f"{d['place']}{d['rno']:02d}{day}",
                           'runners': [{'num': x['num'], 'waku': x['waku'], 'horse': x['horse'], 'jockey': x['jockey'], 'sexage': x['sexage'],
                                        'kg': x['kg'], 'odds': x['odds'], 'pop': x['pop'], 'mkt_p': x['mkt_p'],
                                        'score': x['ps_idx'], 'p_place': None, 'p_win': None, 'fair': None, 'ev': None,
