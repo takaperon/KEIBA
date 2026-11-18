@@ -17,6 +17,21 @@ recs = []
 if os.path.exists(f'{D}/noken.jsonl'):
     recs = [json.loads(l) for l in open(f'{D}/noken.jsonl')]
 st = {'errors': [], 'new_pages': {}, 'zero_pages': []}
+# 読み方を直した主催者は読み直す
+_ver = seen.get('_ver', {k: 1 for k in N.VER})
+DOM = {'岩手': 'iwatekeiba', '兵庫': 'sonoda-himeji', '佐賀': 'sagakeiba', '名古屋': 'nagoyakeiba', '笠松': 'kasamatsu-keiba', '高知': 'keiba.or.jp'}
+for src, v in N.VER.items():
+    if _ver.get(src) != v:
+        urls = {r['url'] for r in recs if r['src'] == src}
+        recs = [r for r in recs if r['src'] != src]
+        for u in list(seen):
+            if u != '_ver' and DOM[src] in u and (u in urls or seen[u] == 0):
+                seen.pop(u)
+        if src == '高知':  # 高知は記事ページ→PDF の2段なので記事ページも忘れる
+            for u in list(seen):
+                if 'keiba.or.jp/?p=' in u:
+                    seen.pop(u)
+seen['_ver'] = dict(N.VER)
 _last = [0.0]
 
 

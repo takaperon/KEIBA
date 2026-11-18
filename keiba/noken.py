@@ -6,6 +6,9 @@
 PDF は pdftotext -layout の文字列を受け取る。
 """
 import re, unicodedata
+
+# 読み方を直したら上げる（上げた主催者のページは読み直す）
+VER = {'岩手': 1, '兵庫': 1, '佐賀': 1, '名古屋': 1, '笠松': 2, '高知': 1}
 from bs4 import BeautifulSoup
 
 KANA = r'[ァ-ヴー・ヶヵ゠-ヿ]'
@@ -146,25 +149,34 @@ def nagoya(text):
 
 # ---------- 笠松（PDF） ----------
 def kasamatsu(text):
+    """2通りの書き方がある：
+    ①「 1R      1,400」の行が馬の行と別（2026年度の多く）
+    ②「       800     1 オレオス ...」と距離が馬の行の頭にある（2025年度など）"""
     date = _wareki(text)
     races = [(int(a), zen2int(b)) for a, b in re.findall(r'^\s*(\d{1,2})R\s+([0-9,]{3,5})\s*$', text, re.M)]
-    out, grp, prev = [], -1, 99
+    out, grp, prev, cur_inline = [], -1, 99, None
+    rlines = re.findall(r'^\s*(\d{1,2})R\s*$', text, re.M)  # ②の「 1R」だけの行
     for ln in text.splitlines():
-        mm = re.search(r'^\s+(\d{1,2})\s+(' + KANA + r'{2,})\s+(.+?)\s+(\d{3})\s+' + TIME + r'\s+(\d+)\s+(合格|不合格)', ln)
-        mn = None if mm else re.search(r'^\s+(\d{1,2})\s+(' + KANA + r'{2,})\s+.*?(不合格|取消|中止)', ln)
-        if not (mm or mn):
+        lead = r'^\s*(?:([0-9]{1,2},[0-9]{3}|[0-9]{3,4})\s+)?(\d{1,2})\s+(' + KANA + r'{2,})\s+'
+        mm = re.search(lead + r'(.+?)\s+(\d{3})\s+' + TIME + r'\s+(\d+)\s+(合格|不合格)', ln)
+        mn = None if mm else re.search(lead + r'.*?(不合格|取消|中止|除外)', ln)
+        m = mm or mn
+        if not m:
             continue
-        num = int((mm or mn)[1])
+        num = int(m[2])
         if num <= prev:
             grp += 1
         prev = num
-        r = races[grp] if 0 <= grp < len(races) else (None, None)
-        if mm:
-            out.append(_rec(venue='笠松', date=date, race=r[0], kind='能力審査', dist=r[1], horse=mm[2], sexage=None, trainer=None, rider=None,
-                            hw=int(mm[4]), time=mm[5], rank=int(mm[6]), result=mm[7]))
+        if m[1]:
+            rr = (int(rlines[grp]) if grp < len(rlines) else grp + 1, zen2int(m[1]))
         else:
-            out.append(_rec(venue='笠松', date=date, race=r[0], kind='能力審査', dist=r[1], horse=mn[2], sexage=None, trainer=None, rider=None,
-                            hw=None, time=None, rank=None, result=mn[3]))
+            rr = races[grp] if 0 <= grp < len(races) else (None, None)
+        if mm:
+            out.append(_rec(venue='笠松', date=date, race=rr[0], kind='能力審査', dist=rr[1], horse=mm[3], sexage=None, trainer=None, rider=None,
+                            hw=int(mm[5]), time=mm[6], rank=int(mm[7]), result=mm[8]))
+        else:
+            out.append(_rec(venue='笠松', date=date, race=rr[0], kind='能力審査', dist=rr[1], horse=mn[3], sexage=None, trainer=None, rider=None,
+                            hw=None, time=None, rank=None, result=mn[4]))
     return out
 
 

@@ -127,6 +127,27 @@ for code, name in nk.NAR_PLACES.items():
             o['errors'].append('kayo ' + str(e)[:60])
     rep['nar'][name] = o
 
+# 能検：過去データの新馬戦（直近120日）の出走馬が、集めた能検の結果に名前で見つかるか（場ごと）
+from keiba.noken import norm_name
+NK = {}
+if os.path.exists('nokendata/noken.jsonl'):
+    for l in open('nokendata/noken.jsonl'):
+        x = json.loads(l); NK.setdefault(x['horse'], []).append(x)
+cut = (datetime.datetime.now(JST) - datetime.timedelta(days=120)).strftime('%Y%m%d')
+rep['noken_shinba'] = {}
+for r in hist.values():
+    if r['date'] < cut or '新馬' not in (r.get('race_name') or '') or r['place'] == '65':
+        continue
+    o = rep['noken_shinba'].setdefault(r['place_name'], {'races': 0, 'horses': 0, 'found': 0, 'found_before_race': 0, 'with_time': 0, 'last_race': ''})
+    o['races'] += 1; o['last_race'] = max(o['last_race'], r['date'])
+    for h in r['runners']:
+        o['horses'] += 1
+        xs = NK.get(norm_name(h['horse'])) or []
+        o['found'] += bool(xs)
+        xb = [x for x in xs if (x.get('date') or '') <= r['date']]
+        o['found_before_race'] += bool(xb)
+        o['with_time'] += any(x.get('sec') for x in xb)
+
 # 当日開催中の場：出馬表・オッズAPI・競馬ナビ
 try:
     hl = T(f'https://nar.netkeiba.com/top/race_list_sub.html?kaisai_date={today}')

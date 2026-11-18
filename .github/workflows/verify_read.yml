@@ -18,6 +18,11 @@ jobs:
           path: nardata
           key: nar-data-none
           restore-keys: nar-data-
+      - uses: actions/cache/restore@v4
+        with:
+          path: nokendata
+          key: noken-data-none
+          restore-keys: noken-data-
       - run: |
           git fetch -q origin data && mkdir -p jradata && git --work-tree=jradata checkout origin/data -- races && git reset -q
       - uses: actions/setup-python@v5
