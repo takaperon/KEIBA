@@ -10,10 +10,10 @@ def get(u):
     except Exception as e:
         st.append(f'ERR {e} {u}'); return b''
 os.makedirs('/tmp/s', exist_ok=True)
-B = 'https://m-jockey.co.jp/keiba-navi/localrace/free'
+B = 'https://m-jockey.co.jp/keiba-navi/localrace/ai-all-race-predictions/'
 day = time.strftime('%Y%m%d', time.gmtime(time.time() + 9 * 3600))
 for name, q in [('today_44_11', f'ymd={day}&venue=44&race_num=11'), ('d1117_44_7', 'ymd=20261117&venue=44&race_num=7'),
-                ('d1001_44_7', 'ymd=20261001&venue=44&race_num=7'), ('d250520_44_7', 'ymd=20250520&venue=44&race_num=7')]:
+                ('d1001_44_7', 'ymd=20261001&venue=44&race_num=7'), ('d1118_47_5', f'ymd={day}&venue=47&race_num=05'), ('d250520_44_7', 'ymd=20250520&venue=44&race_num=7')]:
     open(f'/tmp/s/{name}.html', 'wb').write(get(f'{B}?{q}'))
 open('/tmp/s/status.txt', 'w').write('\n'.join(st))
 subprocess.run('tar -C /tmp/s -czf /tmp/sample.tgz .', shell=True, check=True)
