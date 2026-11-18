@@ -27,6 +27,7 @@ jobs:
           path: oddsdata
           key: nar-odds-${{ github.run_id }}
           restore-keys: nar-odds-
+      - run: echo "T0=$(date +%s)" >> $GITHUB_ENV && pip install -q beautifulsoup4 lxml
       - name: collect
         run: |
           H=$(TZ=Asia/Tokyo date +%H)
@@ -57,6 +58,8 @@ jobs:
         if: always()
         run: |
           H=$(TZ=Asia/Tokyo date +%H)
+          # すぐ失敗した回は次を起動しない（失敗の連鎖で起動し続けないように。定時実行が保険）
+          if [ "${{ job.status }}" != "success" ] && [ $(( $(date +%s) - T0 )) -lt 600 ]; then echo "短時間で失敗したので連鎖しない"; exit 0; fi
           if [ $H -ge 8 ] && [ $H -lt 21 ]; then
             curl -s -X POST -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" \
               https://api.github.com/repos/${{ github.repository }}/actions/workflows/collect_nar.yml/dispatches -d '{"ref":"main"}' -w "%{http_code}\n"
