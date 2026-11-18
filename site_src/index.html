@@ -105,7 +105,16 @@ function isTop(r,h){const m=Math.max(...r.runners.map(x=>x.score??-1e9));return 
 // ---- 鍵（初回は #k=... のリンクで開くと保存される） ----
 const b2u=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
 const u2b=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-function keyRaw(){try{const h=location.hash.match(/k=([A-Za-z0-9_\-]+)/);if(h){localStorage.setItem('keiba_key',h[1]);history.replaceState(null,'',location.pathname)}return localStorage.getItem('keiba_key')}catch(e){return null}}
+let KEY=null;
+function keyRaw(){if(KEY)return KEY;
+  const h=(location.hash||'').match(/k=([A-Za-z0-9_\-]+)/);
+  if(h){KEY=h[1];try{localStorage.setItem('keiba_key',KEY)}catch(e){};try{history.replaceState(null,'',location.pathname)}catch(e){};return KEY}
+  try{KEY=localStorage.getItem('keiba_key')}catch(e){}
+  return KEY}
+function setKey(){const v=(document.getElementById('kin').value||'').trim();const m=v.match(/k=([A-Za-z0-9_\-]+)/)||v.match(/^([A-Za-z0-9_\-]{1000,})$/);
+  if(!m){alertBox('鍵が読み取れませんでした。リンク全体を貼り付けてください。');return}
+  KEY=m[1];try{localStorage.setItem('keiba_key',KEY)}catch(e){};location.reload()}
+function alertBox(t){const e=document.getElementById('kmsg');if(e)e.textContent=t}
 async function decryptData(o){const raw=b2u(keyRaw());
   const pk=await crypto.subtle.importKey('pkcs8',raw,{name:'RSA-OAEP',hash:'SHA-256'},false,['decrypt']);
   const k=await crypto.subtle.decrypt({name:'RSA-OAEP'},pk,b2u(o.k));
@@ -128,7 +137,11 @@ async function refresh(){const btn=document.getElementById('rf');btn.textContent
     init();if(cur.place&&R().some(x=>x.place_name===cur.place)){place=cur.place;rno=cur.rno;render()}
   }catch(e){main.innerHTML=`<div class="warn">データを開けませんでした（${e.message}）。鍵のリンクから一度開き直してください。</div>`}
   btn.textContent='↻ 更新';btn.disabled=false}
-(async()=>{if(!keyRaw()){main.innerHTML='<div class="warn">この端末にはまだ鍵がありません。チャットで渡した「鍵つきリンク」から一度開いてください。</div>';return}
+(async()=>{if(!keyRaw()){main.innerHTML=`<div class="card"><div class="rt">鍵の登録（最初の1回だけ）</div>
+  <div class="meta" style="margin:8px 0">チャットで渡した長いリンクを長押し→コピーして、下に貼り付けて「登録」を押してください。</div>
+  <textarea id="kin" style="width:100%;height:120px;background:#0b0e14;color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:8px;font-size:12px" placeholder="https://keiba-5db.pages.dev/#k=..."></textarea>
+  <button onclick="setKey()" style="margin-top:8px;width:100%;padding:10px;border:0;border-radius:10px;background:var(--neo);color:#04211b;font-weight:800">登録</button>
+  <div id="kmsg" class="meta" style="color:var(--hot);margin-top:6px"></div></div>`;return}
   try{const m=localStorage.getItem('km');if(m)mode=m}catch(e){}
   try{await loadData()}catch(e){main.innerHTML=`<div class="warn">データを開けませんでした（${e.message}）</div>`;return}
   if(!(D.modes[mode]||[]).length&&(D.modes[mode==='chuo'?'chiho':'chuo']||[]).length)mode=mode==='chuo'?'chiho':'chuo';
