@@ -101,3 +101,4 @@
 - EXT-1：水分ボンバーオンライン＝nar.k-ba.net（robots.txt 空＝制限なし）。/YYYYMMDD/ に全場・全Rのリンク、/YYYYMMDD/{場}/{R}/table.html に近走・距離・馬場・平均指数（2024-11 のページも残っている）。かよちんの地方競馬予想＝kayochinkeiba.com（robots.txt は /wp-admin/ 以外許可）。/YYMMDD{場ローマ字}/ の記事冒頭に各Rの指数順の馬番と指数。月別サイトマップあり（2016年〜）
 - 注意：過去ページの指数が発走前のものか（後から作り直されていないか）は外から確かめられない。検証で不自然に高い精度が出たら、まずこれを疑う
 - 2026-11-18 本当の更新ボタン（オーナー選択）：Cloudflare Pages（site ブランチ）に画面を置く。データは data.json（AES-GCM＋RSA-OAEP で暗号化）をブラウザが鍵で開ける。鍵は「#k=…」つきリンクで一度開くと端末に保存。↻更新で最新データと、表示中レースのその場の単勝オッズを取得（/api/odds：地方=netkeiba オッズAPI、中央=JRA公式。鍵で署名したリクエストだけ受け付け、公開鍵で確認するので Cloudflare 側に秘密の値は不要）
+- 2026-11-18 Cloudflare Pages：https://keiba-5db.pages.dev/ （site ブランチ）。鍵つきリンクをオーナーに渡した
