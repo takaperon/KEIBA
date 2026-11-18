@@ -153,19 +153,29 @@ try:
             print('result ERR', rr['id'], e)
     # 外部指数（水分ボンバー・かよちん）：当日分。検証前なので参考表示のみ
     try:
+        ext_err = []  # サイトごとに失敗を分ける（1つのサイトが落ちても他は出す）
         sbo = {}
-        for code, rno, u in ext.sbo_day(get(f'https://nar.k-ba.net/{day}/').decode('utf-8', 'replace'), day):
-            try:
-                sbo[(code, rno)] = ext.sbo_race(get(u).decode('utf-8', 'replace'))
-            except Exception as e:  # noqa
-                print('sbo ERR', u, e)
+        try:
+            for code, rno, u in ext.sbo_day(get(f'https://nar.k-ba.net/{day}/').decode('utf-8', 'replace'), day):
+                try:
+                    sbo[(code, rno)] = ext.sbo_race(get(u).decode('utf-8', 'replace'))
+                except Exception as e:  # noqa
+                    print('sbo ERR', u, e)
+        except Exception as e:  # noqa
+            ext_err.append('水分ボンバー：' + str(e)[:60].replace('<', '').replace('>', ''))
         kayo = {}
-        sm = get(f'https://kayochinkeiba.com/sitemap-posttype-post.{day[:6]}.xml').decode('utf-8', 'replace')
-        for u in re.findall(r'<loc>([^<]+)</loc>', sm):
-            k = ext.kayo_url_key(u)
-            if k and k[0] == day:
-                for rno, v in ext.kayo_post(get(u).decode('utf-8', 'replace')).items():
-                    kayo[(k[1], rno)] = v
+        try:
+            sm = get(f'https://kayochinkeiba.com/sitemap-posttype-post.{day[:6]}.xml').decode('utf-8', 'replace')
+            for u in re.findall(r'<loc>([^<]+)</loc>', sm):
+                k = ext.kayo_url_key(u)
+                if k and k[0] == day:
+                    try:
+                        for rno, v in ext.kayo_post(get(u).decode('utf-8', 'replace')).items():
+                            kayo[(k[1], rno)] = v
+                    except Exception as e:  # noqa
+                        print('kayo ERR', u, e)
+        except Exception as e:  # noqa
+            ext_err.append('かよちん：' + str(e)[:60].replace('<', '').replace('>', ''))
         knavi = {}
         kf = f'oddsdata/knavi/{day}.jsonl.gz'
         if os.path.exists(kf):
@@ -195,9 +205,9 @@ try:
                 h['ext'] = round(sum(ds) / len(ds), 1) if ds else None
                 h['ext_n'] = len(ds)
             rr['has_ext'] = any(h.get('ext') is not None for h in rr['runners'])
-        out['notes']['chiho_ext'] = f'外部指数：水分ボンバー {len(sbo)}R・かよちん {len(kayo)}R・競馬ナビ {sum(1 for v in knavi.values() if v)}R'
+        out['notes']['chiho_ext'] = f'外部指数：水分ボンバー {len(sbo)}R・かよちん {len(kayo)}R・競馬ナビ {sum(1 for v in knavi.values() if v)}R' + ('（取得できず：' + '／'.join(ext_err) + '）' if ext_err else '')
     except Exception as e:  # noqa
-        out['notes']['chiho_ext'] = '外部指数を取得できず：' + str(e)[:100]
+        out['notes']['chiho_ext'] = '外部指数を取得できず：' + str(e)[:100].replace('<', '').replace('>', '')
     # 能力検査（新馬・初出走の馬だけ）：collect_noken が集めた公式の結果を馬名で引く
     NOKEN_SRC = {'35': '岩手', '36': '岩手', '50': '兵庫', '51': '兵庫', '55': '佐賀', '48': '名古屋', '47': '笠松', '54': '高知'}
     NOKEN_NONE = {'42': '南関東の能検結果は nankankeiba.com にしかなく、取得用のサーバーから拒否される（403）',

@@ -83,7 +83,8 @@ function render(){
   const r=R().find(x=>x.place_name===place&&x.rno===rno);
   main.innerHTML=note()+(r?race(r):'');
 }
-function note(){const n=(D.notes[mode]||'')+(mode==='chiho'&&D.notes.chiho_ext?'<br>'+D.notes.chiho_ext:'')+(mode==='chiho'&&D.notes.chiho_noken?'<br>'+D.notes.chiho_noken:'');const e=D.notes[mode+'_error'];return `<div class="warn">${n}${e?'<br>取得エラー：'+e:''}</div>`}
+const esc=t=>String(t??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function note(){const n=(D.notes[mode]||'')+(mode==='chiho'&&D.notes.chiho_ext?'<br>'+D.notes.chiho_ext:'')+(mode==='chiho'&&D.notes.chiho_noken?'<br>'+D.notes.chiho_noken:'');const e=D.notes[mode+'_error'];return `<div class="warn">${n}${e?'<br>取得エラー：'+esc(e):''}</div>`}
 function race(r){
   const isN=mode==='chiho';
   const fin=r.runners.some(h=>h.pos!=null);const mvs=isN&&r.has_moves;
