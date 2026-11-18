@@ -17,8 +17,8 @@ JST = datetime.timezone(datetime.timedelta(hours=9))
 now = datetime.datetime.now(JST)
 day = now.strftime('%Y%m%d')
 _fix = os.path.join(os.path.dirname(__file__), 'app_day.txt')  # 検証用：過去の日付で作る
-if os.path.exists(_fix):
-    day = open(_fix).read().strip()
+if os.environ.get('APP_DAY') or os.path.exists(_fix):
+    day = os.environ.get('APP_DAY') or open(_fix).read().strip()
     now = datetime.datetime(int(day[:4]), int(day[4:6]), int(day[6:]), 23, 59, tzinfo=JST)
 _last = [0.0]
 
@@ -198,6 +198,46 @@ try:
         out['notes']['chiho_ext'] = f'外部指数：水分ボンバー {len(sbo)}R・かよちん {len(kayo)}R・競馬ナビ {sum(1 for v in knavi.values() if v)}R'
     except Exception as e:  # noqa
         out['notes']['chiho_ext'] = '外部指数を取得できず：' + str(e)[:100]
+    # 能力検査（新馬・初出走の馬だけ）：collect_noken が集めた公式の結果を馬名で引く
+    NOKEN_SRC = {'35': '岩手', '36': '岩手', '50': '兵庫', '51': '兵庫', '55': '佐賀', '48': '名古屋', '47': '笠松', '54': '高知'}
+    NOKEN_NONE = {'42': '南関東の能検結果は nankankeiba.com にしかなく、取得用のサーバーから拒否される（403）',
+                  '43': '南関東の能検結果は nankankeiba.com にしかなく、取得用のサーバーから拒否される（403）',
+                  '44': '南関東の能検結果は nankankeiba.com にしかなく、取得用のサーバーから拒否される（403）',
+                  '45': '南関東の能検結果は nankankeiba.com にしかなく、取得用のサーバーから拒否される（403）',
+                  '30': 'ホッカイドウ競馬の公式サイトが取得用のサーバーに応答しない（503）',
+                  '46': '金沢競馬の公式サイトに能検の結果ページが見当たらない（動画のみ）'}
+    nk_idx = {}
+    nf = 'nokendata/noken.jsonl'
+    if os.path.exists(nf):
+        for l in open(nf):
+            x = json.loads(l)
+            nk_idx.setdefault(x['horse'], []).append(x)
+    from keiba.noken import norm_name
+    n_need = n_hit = 0
+    for rr in races:
+        code = rr['id'][4:6]
+        rr['is_shinba'] = '新馬' in (rr.get('race_name') or '')
+        rr['noken_src'] = NOKEN_SRC.get(code)
+        rr['noken_none'] = NOKEN_NONE.get(code)
+        for h in rr['runners']:
+            if h.get('runs'):
+                continue
+            hs = [x for x in nk_idx.get(norm_name(h['horse']), []) if (x.get('date') or '') <= day]
+            hs.sort(key=lambda x: x.get('date') or '', reverse=True)
+            # 新馬戦は全頭。それ以外の初出走（転入馬など）は能検・ゲート検査の記録が見つかったときだけ出す
+            if not rr['is_shinba'] and not hs:
+                continue
+            if rr['is_shinba']:
+                n_need += 1; n_hit += bool(hs)
+            # 同じ検査の同じ組で何頭中何着か（着順が無い主催者は時計の順）
+            for x in hs[:3]:
+                grp = [y for v in nk_idx.values() for y in v if y.get('url') == x.get('url') and y.get('race') == x.get('race') and y.get('dist') == x.get('dist') and y.get('kind') == x.get('kind')]
+                x['n_grp'] = len(grp)
+                if x.get('rank') is None and x.get('sec') is not None:
+                    x['rank_t'] = 1 + sum(1 for y in grp if y.get('sec') is not None and y['sec'] < x['sec'])
+            h['noken'] = [{k: x.get(k) for k in ('date', 'venue', 'kind', 'dist', 'time', 'rank', 'rank_t', 'n_grp', 'hw', 'result', 'src')} for x in hs[:3]]
+            h['noken_need'] = True
+    out['notes']['chiho_noken'] = (f'能検：新馬戦の出走馬 {n_need}頭のうち {n_hit}頭の結果あり' if n_need else '能検：今日の新馬戦なし') + f'（収録 {sum(len(v) for v in nk_idx.values())}頭分。南関東・門別・金沢は取得元なし）'
     out['modes']['chiho'] = races
     out['notes']['chiho'] = ('独自指数 v2（オッズ不使用・過去2年で学習）。テスト1年で3着以内AUC0.79・確率の当たり具合は良好だが、'
                              'EV買いの回収率は64〜75%で100%に届かず、モデルと市場がずれた馬は市場どおりの結果だった。'
@@ -246,6 +286,8 @@ try:
         print('jra result ERR', e)
     out['modes']['chuo'] = races
     out['notes']['chuo'] = '中央の独自指数は検証前。表示は暫定指数（近4走の着差×レースの格、未検証）。推奨買い目は出さない。'
+    if any('新馬' in (r.get('race_name') or '') for r in races):
+        out['notes']['chuo'] += '<br>新馬戦：中央には地方のような能力検査（時計を計る検査レース）がなく、JRA公式サイトにゲート試験の時計も見当たらないため、能検タイムは出せない。'
 except Exception as e:  # noqa
     out['notes']['chuo_error'] = str(e)[:200]
     print('chuo error', e)

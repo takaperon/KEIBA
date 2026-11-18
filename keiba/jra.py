@@ -176,14 +176,14 @@ def parse_card(html: str) -> dict:
             mx = re.search(r'\d+', _t(td.select_one('.num .max')))
             dist = _t(td.find(class_='dist'))
             g = td.select_one('.r_class img')
-            f3 = re.search(r'3F\s*([\d.]+)', _t(td.find(class_='f3')))
+            f3 = re.search(r'3F\s*(?:(\d+):)?(\d+\.\d)', _t(td.find(class_='f3')))  # 「3F 1:00.9」（大きく遅れた馬）もある
             pos = int(pl.group()) if pl else None
             past.append({'date': _t(td.find(class_='date')), 'rc': _t(td.find(class_='rc')),
                          'name': _t(td.select_one('.race_line .name')), 'grade': g.get('alt') if g else None,
                          'pos': pos, 'field': int(mx.group()) if mx else None,
                          'pop': int(re.search(r'\d+', _t(td.select_one('.num .pop'))).group()) if re.search(r'\d+', _t(td.select_one('.num .pop'))) else None,
                          'dist': dist, 'going': _t(td.find(class_='condition')),
-                         'last3f': float(f3.group(1)) if f3 else None,
+                         'last3f': (int(f3.group(1) or 0) * 60 + float(f3.group(2))) if f3 else None,
                          'margin': _margin(_t(td.find(class_='fin')), pos)})
         rows.append({'num': int(_t(num)), 'waku': _id(tr.find('td', class_='waku'), r'waku/(\d+)\.png'),
                      'horse': _t(hz.select_one('.name')) if hz else '',

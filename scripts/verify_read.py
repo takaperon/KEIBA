@@ -148,6 +148,26 @@ for r in hist.values():
         o['found_before_race'] += bool(xb)
         o['with_time'] += any(x.get('sec') for x in xb)
 
+# 2歳の初出走馬（過去データで初めて出てきた2歳馬）で同じことを確認。新馬戦の名前が場ごとに違うため
+first = {}
+for r in sorted(hist.values(), key=lambda r: (r['date'], r['rno'])):
+    for h in r['runners']:
+        k = h.get('horse_id') or h['horse']
+        if k not in first:
+            first[k] = (r, h)
+rep['noken_debut2'] = {}
+for k, (r, h) in first.items():
+    if r['date'] < cut or r['place'] == '65' or not re.search(r'2', h.get('sexage') or ''):
+        continue
+    o = rep['noken_debut2'].setdefault(r['place_name'], {'horses': 0, 'found_before_race': 0, 'with_time': 0, 'race_names': {}})
+    o['horses'] += 1
+    xb = [x for x in (NK.get(norm_name(h['horse'])) or []) if (x.get('date') or '') <= r['date']]
+    o['found_before_race'] += bool(xb); o['with_time'] += any(x.get('sec') for x in xb)
+    nm = re.sub(r'\d+', '#', r.get('race_name') or '')[:12]
+    o['race_names'][nm] = o['race_names'].get(nm, 0) + 1
+for o in rep['noken_debut2'].values():
+    o['race_names'] = dict(sorted(o['race_names'].items(), key=lambda x: -x[1])[:5])
+
 # 当日開催中の場：出馬表・オッズAPI・競馬ナビ
 try:
     hl = T(f'https://nar.netkeiba.com/top/race_list_sub.html?kaisai_date={today}')

@@ -61,7 +61,10 @@ def take(src, u, fn):
     try:
         rs = fn()
     except Exception as e:  # noqa
-        st['errors'].append(f'{src} {u} {str(e)[:80]}'); return
+        st['errors'].append(f'{src} {u} {str(e)[:80]}')
+        if '404' in str(e):
+            seen[u] = -1  # 消えたページは次から取りに行かない
+        return
     for r in rs:
         r['src'] = src; r['url'] = u
     recs.extend(rs)

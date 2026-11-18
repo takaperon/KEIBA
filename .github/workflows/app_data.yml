@@ -10,9 +10,10 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['scripts/app_data.py', 'scripts/app_day.txt', 'site_src/**', 'keiba/nk.py', '.github/workflows/app_data.yml']
+    paths: ['scripts/app_data.py', 'scripts/app_day.txt', 'site_src/**', 'keiba/nk.py', 'keiba/noken.py', '.github/workflows/app_data.yml']
 permissions:
   contents: write
+  actions: write
 concurrency:
   group: app_data
   cancel-in-progress: true
@@ -32,6 +33,11 @@ jobs:
           path: oddsdata
           key: nar-odds-none
           restore-keys: nar-odds-
+      - uses: actions/cache/restore@v4
+        with:
+          path: nokendata
+          key: noken-data-none
+          restore-keys: noken-data-
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: pip install -q numpy pandas scikit-learn lightgbm beautifulsoup4 lxml cryptography
@@ -50,3 +56,17 @@ jobs:
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m site
           git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" site
+      - name: 土日・祝日は中央の締切前オッズ記録が動いているか確認し、止まっていれば起動（定時実行が来ないことがあるため）
+        if: always()
+        run: |
+          H=$(TZ=Asia/Tokyo date +%H)
+          C=$(python3 -c "import json;print(len(json.load(open('appout/app.json'))['modes'].get('chuo') or []))" 2>/dev/null || echo 0)
+          if [ "$C" != "0" ] && [ $H -ge 8 ] && [ $H -lt 16 ]; then
+            N=$(curl -s -H "Authorization: Bearer ${{ github.token }}" "https://api.github.com/repos/${{ github.repository }}/actions/workflows/collect_jra.yml/runs?status=in_progress" | python3 -c "import json,sys;print(json.load(sys.stdin).get('total_count',0))")
+            Q=$(curl -s -H "Authorization: Bearer ${{ github.token }}" "https://api.github.com/repos/${{ github.repository }}/actions/workflows/collect_jra.yml/runs?status=queued" | python3 -c "import json,sys;print(json.load(sys.stdin).get('total_count',0))")
+            echo "collect_jra running=$N queued=$Q"
+            if [ "$N" = "0" ] && [ "$Q" = "0" ]; then
+              curl -s -X POST -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" \
+                https://api.github.com/repos/${{ github.repository }}/actions/workflows/collect_jra.yml/dispatches -d '{"ref":"main"}' -w "%{http_code}\n"
+            fi
+          fi
