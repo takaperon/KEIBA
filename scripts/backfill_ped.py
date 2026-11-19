@@ -25,7 +25,7 @@ _last = [0.0]
 
 
 def get(u):
-    w = 3.0 - (time.time() - _last[0])
+    w = 6.0 - (time.time() - _last[0])  # 先方が 503 を返した後なので間隔を広げる
     if w > 0:
         time.sleep(w)
     _last[0] = time.time()
@@ -57,7 +57,10 @@ def fetch(x):
     try:
         t = get(f'https://{host}/race/shutuba_past.html?race_id={rid}')
     except Exception as e:  # noqa
-        state['errors'] += 1; print('ERR', rid, str(e)[:80], flush=True); return
+        state['errors'] += 1; print('ERR', rid, str(e)[:80], flush=True)
+        if '503' in str(e) or '403' in str(e) or '429' in str(e):
+            raise SystemExit('先方が拒否（' + str(e)[:40] + '）。ここで止める')  # 拒否されたら取り続けない
+        return
     state['fetched'] += 1
     p = nk.parse_pedigree(t)
     byname = {n: v for n, v in p.items()}
@@ -83,31 +86,37 @@ def save():
         os.replace(f'{a.out}/{f}.tmp', f'{a.out}/{f}')
 
 
-done = False
-for x in races:
-    if time.time() - T0 > a.max_minutes * 60:
-        break
-    if x[1] in empty:
-        continue
-    if any(hid and hid not in ped for hid, _ in x[6]):
-        fetch(x)
-        if state['fetched'] % 200 == 0:
-            print(state['fetched'], 'pages', len(ped), 'horses', flush=True)
-            save()  # 途中で止められても集めた分が残るように
-else:
-    done = True
-# 回りの向きが分からない (場, 芝ダ, 距離) は1レースずつ取る
-if done:
+def main():
+    for x in races:
+        if time.time() - T0 > a.max_minutes * 60:
+            return False
+        if x[1] in empty:
+            continue
+        if any(hid and hid not in ped for hid, _ in x[6]):
+            fetch(x)
+            if state['fetched'] % 200 == 0:
+                print(state['fetched'], 'pages', len(ped), 'horses', flush=True)
+                save()  # 途中で止められても集めた分が残るように
+    # 回りの向きが分からない (場, 芝ダ, 距離) は1レースずつ取る
     seen = set()
     for x in races:
         if time.time() - T0 > a.max_minutes * 60:
-            done = False; break
+            return False
         k = (x[2], x[3], x[4])
         if k in seen or not x[3] or not x[4] or x[0] != 'nar':
             continue
         seen.add(k)
         if f'{x[2]}|{x[3]}|{x[4]}' not in course and x[1] not in empty:
             fetch(x)
+    return True
+
+
+refused = None
+try:
+    done = main()
+except SystemExit as e:
+    done, refused = False, str(e)
+state['refused'] = refused
 state['empty'] = sorted(empty)
 state['horses'] = len(ped); state['courses'] = len(course)
 state['missing_after'] = len({hid for x in races for hid, _ in x[6] if hid} - set(ped))
@@ -117,4 +126,7 @@ if done:
     open(f'{a.out}/DONE', 'w').write('1')
 elif os.path.exists(f'{a.out}/DONE'):
     os.remove(f'{a.out}/DONE')
-print('done' if done else 'partial', {k: v for k, v in state.items() if k != 'empty'}, flush=True)
+print('done' if done else ('REFUSED' if refused else 'partial'), {k: v for k, v in state.items() if k != 'empty'}, flush=True)
+
+if refused:
+    sys.exit(2)  # 失敗扱いにして連鎖させない

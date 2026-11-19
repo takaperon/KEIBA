@@ -1,12 +1,7 @@
 name: backfill_ped
 # 血統（父・母・母父）の過去分を netkeiba の馬柱ページから集める（キャッシュに保存。件数だけ ped-status ブランチへ）
 on:
-  schedule:
-    - cron: '10 */6 * * *'
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['scripts/backfill_ped.py', '.github/workflows/backfill_ped.yml']
 permissions:
   contents: write
   actions: write
@@ -31,7 +26,7 @@ jobs:
           restore-keys: ped-data-
       - run: git fetch -q origin data && mkdir -p jradata && git --work-tree=jradata checkout origin/data -- races && git reset -q
       - run: pip install -q beautifulsoup4 lxml
-      - run: python3 scripts/backfill_ped.py --max-minutes 300 2>&1 | tail -40
+      - run: set -o pipefail; python3 scripts/backfill_ped.py --max-minutes 300 2>&1 | tail -40
       - uses: actions/cache/save@v4
         if: always()
         with:
