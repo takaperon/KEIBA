@@ -46,7 +46,7 @@ tr.mvA{background:linear-gradient(90deg,rgba(255,77,141,.28),transparent 85%)}tr
 .ped{font-size:10.5px;color:#b9c3d6;margin-top:1px}.ped .ms{display:block;color:#93a0b8}
 .nk{font-size:10.5px;color:#cfe3ff;margin-top:2px}.nk b{color:var(--nar)}.nk.no{color:var(--warn)}
 .empty{color:var(--mut);text-align:center;padding:40px 0}
-@media (min-width:760px){header>*,main{max-width:860px;margin-left:auto;margin-right:auto}main{padding:18px 16px 60px}
+@media (min-width:760px){header>*,main{max-width:1280px;margin-left:auto;margin-right:auto}main{padding:18px 16px 60px}
   .hr{display:grid;grid-template-columns:1fr auto;column-gap:16px}.hr .l1{grid-column:1/3}.hr .l2,.hr .l3,.hr .mt,.hr .nk{grid-column:1/3}
   .l1 .nm{font-size:17px}.od{font-size:18px}.rn button:hover,.tab:hover,.sb button:hover{border-color:var(--ac)}}
 .sb{display:flex;gap:6px;overflow-x:auto;margin:10px -2px 4px;padding:0 2px}.sb::-webkit-scrollbar{display:none}
@@ -58,7 +58,11 @@ tr.mvA{background:linear-gradient(90deg,rgba(255,77,141,.28),transparent 85%)}tr
 .od{font-size:16px;font-weight:800;white-space:nowrap}.od small{font-size:10.5px;color:var(--mut);font-weight:600;margin-left:3px}
 .l2{display:flex;justify-content:space-between;gap:8px;color:var(--mut);font-size:12px;margin-top:2px;padding-left:2px}
 .l3{font-size:12px;margin-top:3px;padding-left:2px;color:#b9c3d6}.l3 a{color:#cfd8ea;text-decoration:none;border-bottom:1px dotted #5d6a82}.l3 .x{margin-left:6px;font-size:11px;color:var(--ac);border:1px solid var(--line);border-radius:6px;padding:0 5px}
-.mt{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;margin-top:5px;padding-left:2px;color:var(--mut)}.mt b{color:var(--tx);font-size:13px;margin-left:2px}.mt b.s1{color:var(--ac)}
+.mt{display:grid;grid-template-columns:repeat(4,1fr);gap:2px 6px;font-size:11px;margin-top:5px;padding-left:2px;color:var(--mut)}.mt>span{display:flex;flex-direction:column;line-height:1.2}.mt b{margin:0;font-size:14px}.mt i{font-style:normal;font-size:10px}
+.pt2{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}.pt2 th{color:var(--mut);font-weight:600;font-size:11px;padding:6px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;cursor:pointer}.pt2 th.l{text-align:left}.pt2 th.on{color:var(--ac)}
+.pt2 td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;vertical-align:middle}.pt2 td.l{text-align:left}.pt2 .nm{font-size:14.5px;font-weight:700}.pt2 .sub{font-size:11px;color:var(--mut);font-weight:400}
+.pt2 td.k{font-weight:800;font-size:14px}.pt2 td.k.s1{color:var(--ac)}.pt2 tr.cx{opacity:.35}.pt2 tr.mvA{background:linear-gradient(90deg,rgba(255,77,141,.22),transparent 90%)}.pt2 tr.mvB{background:linear-gradient(90deg,rgba(255,176,32,.16),transparent 90%)}
+.pt2 td.sep{border-left:1px solid var(--line)}.pt2 a{color:#cfd8ea;text-decoration:none;border-bottom:1px dotted #5d6a82}.mt b{color:var(--tx);font-size:13px;margin-left:2px}.mt b.s1{color:var(--ac)}
 .hr .nk{font-size:11.5px;padding-left:2px}
 .pv input{width:100%;background:#0b0e14;color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:16px}
 .pv label{display:block;color:var(--mut);font-size:12px;margin:8px 0 3px}
@@ -108,6 +112,22 @@ function render(){
 const esc=t=>String(t??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 function note(){const n=(D.notes[mode]||'')+(mode==='chiho'&&D.notes.chiho_ext?'<br>'+D.notes.chiho_ext:'')+(mode==='chiho'&&D.notes.chiho_noken?'<br>'+D.notes.chiho_noken:'');const e=D.notes[mode+'_error'];return `<div class="warn">${n}${e?'<br>取得エラー：'+esc(e):''}</div>`}
 const SORTS=[['num','馬番'],['odds','単勝'],['score','SCORE'],['pp','3着内'],['ev','EV'],['ext','外部'],['mv','10→2分売れ'],['mv60','1時間前比'],['pos','着順']];
+const WIDE=()=>innerWidth>=760;addEventListener('resize',()=>{if(VIEW==='race'&&D.date)render()});
+function raceTable(r){const isN=mode==='chiho';const fin=r.runners.some(h=>h.pos!=null);const mvs=isN&&r.has_moves;const ext=isN&&r.has_ext;
+  const H=(k,l,c)=>`<th class="${c||''} ${sk===k?'on':''}" onclick="setS('${k}')">${l}${sk===k&&k!=='num'?' ▼':''}</th>`;
+  const head=`<tr>${fin?H('pos','着','l'):''}${H('num','番','l')}<th class="l">馬名</th><th class="l">騎手</th>${H('odds','単勝')}<th>人気</th>${H('score',isN?'SCORE':'暫定指数','sep')}${ext?H('ext','外部指数')+'<th>水</th><th>か</th><th>ナ</th>':''}${isN?H('pp','3着内','sep')+H('ev','EV')+'<th>適正</th>':''}${mvs?H('mv','10→2分','sep')+H('mv60','1h前比'):''}<th class="l sep">父 × 母父</th></tr>`;
+  const q=(h,o)=>`openPed(${JSON.stringify(Object.assign({race:rctx(r)},o)).replace(/"/g,'&quot;')})`;
+  const rows=sorted(r.runners).map(h=>`<tr class="${h.cancel?'cx':''} ${mvs?mvc(h):''}">${fin?`<td class="l">${h.pos!=null?`<span class="ps ${h.pos<=3?'p'+h.pos:''}">${h.pos}</span>`:`<span class="pop">${h.pos_text||''}</span>`}</td>`:''}
+    <td class="l"><span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'}">${h.num}</span></td>
+    <td class="l"><span class="nm">${esc(h.horse)}</span> <span class="sub">${h.sexage||''} ${h.kg||''}${h.hw?` ${h.hw}(${h.hw_diff>0?'+':''}${h.hw_diff})`:''}${isN&&h.runs===0?' 初出':''}</span>${isN&&h.noken_need?nkLine(h,r):''}</td>
+    <td class="l">${esc(h.jockey||'')}</td>
+    <td class="k">${h.final_tan??h.odds??'-'}${h.prev_odds&&h.prev_odds!==h.odds?` <span class="lv ${h.odds<h.prev_odds?'dn':'upx'}">${h.odds<h.prev_odds?'↓':'↑'}${h.prev_odds}</span>`:''}</td><td>${h.pop??''}${h.mkt_p!=null?` <span class="sub">${Math.round(h.mkt_p*100)}%</span>`:''}</td>
+    <td class="k sep ${isTop(r,h)?'s1':''}">${h.score??'-'}</td>
+    ${ext?`<td class="k">${h.ext??'-'}</td><td>${h.ext_sbo??''}</td><td>${h.ext_kayo??''}</td><td>${h.ext_knavi??''}</td>`:''}
+    ${isN?`<td class="sep">${h.p_place!=null?Math.round(h.p_place*100)+'%':'-'}</td><td>${h.ev??'-'}</td><td class="sub">${h.fair??''}</td>`:''}
+    ${mvs?`<td class="sep"><span class="mv ${h.mv10_2>0.15?'up':''}">${h.mv10_2!=null?pct(h.mv10_2):'-'}</span></td><td class="${h.mv60_2<=-0.3?'mvt':''}">${h.mv60_2!=null?pct(h.mv60_2):'-'}</td>`:''}
+    <td class="l sep">${h.sire||h.damsire?`<a href="javascript:void 0" onclick="${q(h,{s:h.sire})}">${esc(h.sire||'—')}</a> × <a href="javascript:void 0" onclick="${q(h,{m:h.damsire})}">${esc(h.damsire||'—')}</a> <a class="sub" href="javascript:void 0" onclick="${q(h,{s:h.sire,m:h.damsire})}">組合せ</a>`:''}</td></tr>`).join('');
+  return `<div style="overflow-x:auto"><table class="pt2">${head}${rows}</table></div>`}
 function race(r){
   const isN=mode==='chiho';
   const fin=r.runners.some(h=>h.pos!=null);const mvs=isN&&r.has_moves;
@@ -116,12 +136,12 @@ function race(r){
   const rows=sorted(r.runners).map(h=>{
     const odds=h.final_tan??h.odds;
     const live=h.prev_odds&&h.prev_odds!==h.odds?`<span class="lv ${h.odds<h.prev_odds?'dn':'upx'}">${h.odds<h.prev_odds?'↓':'↑'}${h.prev_odds}</span> `:'';
-    const mt=[];
-    if(h.score!=null)mt.push(`${isN?'SCORE':'暫定'}<b class="${isTop(r,h)?'s1':''}">${h.score}</b>`);
-    if(isN&&h.p_place!=null)mt.push(`3着内<b>${Math.round(h.p_place*100)}%</b>`);
-    if(isN&&h.ev!=null)mt.push(`EV<b>${h.ev}</b>${h.fair?` <span>適正${h.fair}</span>`:''}`);
-    if(isN&&r.has_ext&&h.ext!=null)mt.push(`外部<b>${h.ext}</b> <span>${h.ext_sbo!=null?'水'+h.ext_sbo:''}${h.ext_kayo!=null?' か'+h.ext_kayo:''}${h.ext_knavi!=null?' ナ'+h.ext_knavi:''}</span>`);
-    if(mvs&&h.mv10_2!=null)mt.push(`10→2分<b class="mv ${h.mv10_2>0.15?'up':''}">${pct(h.mv10_2)}</b>${h.mv60_2!=null?` <span>1時間前比 <b class="${h.mv60_2<=-0.3?'mvt':''}">${pct(h.mv60_2)}</b></span>`:''}`);
+    const mt=[];const sl=(l,v,cls,sub)=>`<i>${l}</i><b class="${cls||''}">${v??'-'}</b>${sub?`<i>${sub}</i>`:''}`;
+    mt.push(sl(isN?'SCORE':'暫定指数',h.score,isTop(r,h)?'s1':''));
+    if(isN&&r.has_ext)mt.push(sl('外部指数',h.ext,'',`${h.ext_sbo!=null?'水'+h.ext_sbo:''}${h.ext_kayo!=null?' か'+h.ext_kayo:''}${h.ext_knavi!=null?' ナ'+h.ext_knavi:''}`));
+    if(isN)mt.push(sl('3着内',h.p_place!=null?Math.round(h.p_place*100)+'%':null));
+    if(isN)mt.push(sl('EV',h.ev,'',h.fair?'適正'+h.fair:''));
+    if(mvs&&h.mv10_2!=null)mt.push(sl('10→2分',pct(h.mv10_2),'mv '+(h.mv10_2>0.15?'up':''),h.mv60_2!=null?'1h前比'+pct(h.mv60_2):''));
     const posb=fin?(h.pos!=null?`<span class="ps ${h.pos<=3?'p'+h.pos:''}">${h.pos}</span>`:`<span class="pop">${h.pos_text||''}</span>`):'';
     return `<div class="hr ${h.cancel?'cx':''} ${mvs?mvc(h):''}">
       <div class="l1">${posb}<span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'}">${h.num}</span><span class="nm">${esc(h.horse)}</span><span class="od">${live}${odds??'-'}<small>${h.pop?h.pop+'人気':''}</small></span></div>
@@ -132,8 +152,7 @@ function race(r){
   return `<div class="card"><div class="rh"><div class="rt">${r.place_name}${r.rno}R ${esc(r.race_name||'')}</div><div class="time">${r.post_time||''}</div></div>
   <div class="meta">${r.surface||''}${r.turn&&r.turn!=='不明'?r.turn:''}${r.distance||''}m　${r.weather||''} ${r.going||''}${done(r)?'　<b>発走済み</b>':''}</div>
   <span class="verdict">判定：${r.verdict}</span>
-  <div class="sb">${sb}</div>
-  ${rows}
+  ${WIDE()?raceTable(r):`<div class="sb">${sb}</div>${rows}`}
   ${isN?nkTable(r):''}
   ${r.payouts&&Object.keys(r.payouts).length?`<div class="pay">${Object.entries(r.payouts).map(([k,v])=>`<div><b>${k}</b><span>${v.map(x=>x.combo+'　'+Number(x.yen).toLocaleString()+'円').join('<br>')}</span></div>`).join('')}</div>`:''}
   ${mvs?`<div class="leg"><span><i style="background:var(--hot)"></i>10分前→2分前で単勝オッズ30%以上下落（急に売れた）</span><span><i style="background:var(--warn)"></i>15〜30%下落</span><span class="up">＋は売れなかった</span></div>`:''}
