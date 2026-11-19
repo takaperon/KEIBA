@@ -178,13 +178,28 @@ def parse_nar_result(html: str) -> dict:
 
 
 def parse_pedigree(html):
-    """nar.netkeiba の馬柱ページ（/race/shutuba_past.html）から 馬名→(父, 母, 母父)。
-    馬欄は Horse01=父・Horse02=馬名・Horse03=母・Horse04=(母父)"""
+    """馬柱ページ（nar.netkeiba / race.netkeiba の /race/shutuba_past.html）から
+    馬名→{'sire','dam','damsire','horse_id'}。馬欄は Horse01=父・Horse02=馬名・Horse03=母・Horse04=(母父)。
+    馬名欄にはブリンカー等の記号が付くことがあるのでリンクの文字を使う"""
     s = BeautifulSoup(html, 'lxml')
     out = {}
     for tr in s.select('tr.HorseList'):
         g = lambda c: (tr.select_one(c).get_text(strip=True) if tr.select_one(c) else '')
-        name = g('.Horse02')
+        a = tr.select_one('.Horse02 a')
+        name = a.get_text(strip=True) if a else g('.Horse02')
+        m = re.search(r'/horse/(\w+)', a.get('href', '')) if a else None
         if name:
-            out[name] = {'sire': g('.Horse01'), 'dam': g('.Horse03'), 'damsire': g('.Horse04').strip('()（）')}
+            out[name] = {'sire': g('.Horse01'), 'dam': g('.Horse03'), 'damsire': g('.Horse04').strip('()（）'),
+                         'horse_id': m.group(1) if m else None}
     return out
+
+
+def parse_course_dir(html):
+    """馬柱・出馬表ページの RaceData01 から (芝/ダ, 距離, 右/左/直線)"""
+    s = BeautifulSoup(html, 'lxml')
+    t = s.select_one('.RaceData01')
+    t = t.get_text(' ', strip=True) if t else ''
+    m = re.search(r'(芝|ダ|障)\s*(\d+)m\s*[\(（]?\s*(右|左|直線|直)?', t)
+    if not m:
+        return None
+    return m.group(1), int(m.group(2)), {'直': '直線'}.get(m.group(3), m.group(3))
