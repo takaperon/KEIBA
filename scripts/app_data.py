@@ -92,6 +92,13 @@ try:
     td['p_place'] = (td.p_place / td.groupby('race').p_place.transform('sum') * td.field.clip(upper=3)).clip(upper=.98)
     pred = {(r, int(n)): x for r, n, x in zip(td.race, td.num, td.to_dict('records'))}
     races = []
+    # 血統（父・母父）：馬柱ページから1レース1回
+    peds = {}
+    for r in today:
+        try:
+            peds[r['id']] = nk.parse_pedigree(get(f"https://nar.netkeiba.com/race/shutuba_past.html?race_id={r['id']}").decode('utf-8', 'replace'))
+        except Exception as e:  # noqa
+            print('ped ERR', r['id'], e)
     for r in today:
         inv = [1 / h['tan'] for h in r['runners'] if h.get('tan')]
         tot = sum(inv) or 1
@@ -100,7 +107,9 @@ try:
         for h in r['runners']:
             x = pred.get((r['id'], h['num']), {})
             pw, pp = x.get('p_win'), x.get('p_place')
+            ped = peds.get(r['id'], {}).get(h['horse'], {})
             rr['runners'].append({'num': h['num'], 'waku': h['waku'], 'horse': h['horse'], 'jockey': h['jockey'], 'sexage': h['sexage'],
+                                  'sire': ped.get('sire'), 'damsire': ped.get('damsire'),
                                   'kg': h['kg'], 'hw': h['hw'], 'hw_diff': h['hw_diff'], 'odds': h.get('tan'), 'pop': h.get('pop'),
                                   'cancel': h['pos_text'] == '取',
                                   'mkt_p': round(1 / h['tan'] / tot, 4) if h.get('tan') else None,
@@ -250,6 +259,9 @@ try:
                     x['rank_t'] = 1 + sum(1 for y in grp if y.get('sec') is not None and y['sec'] < x['sec'])
             h['noken'] = [{k: x.get(k) for k in ('date', 'venue', 'kind', 'dist', 'time', 'rank', 'rank_t', 'n_grp', 'hw', 'result', 'src')} for x in hs[:3]]
             h['noken_need'] = True
+    n_all = sum(1 for rr in races for h in rr['runners'])
+    n_ped = sum(1 for rr in races for h in rr['runners'] if h.get('sire'))
+    out['notes']['chiho_ped'] = f'血統（父・母父）：{n_all}頭中 {n_ped}頭'
     out['notes']['chiho_noken'] = (f'能検：新馬戦の出走馬 {n_need}頭のうち {n_hit}頭の結果あり' if n_need else '能検：今日の新馬戦なし') + f'（収録 {sum(len(v) for v in nk_idx.values())}頭分。南関東・門別・金沢は取得元なし）'
     out['modes']['chiho'] = races
     out['notes']['chiho'] = ('独自指数 v2（オッズ不使用・過去2年で学習）。テスト1年で3着以内AUC0.79・確率の当たり具合は良好だが、'
@@ -274,6 +286,7 @@ try:
             races.append({k: d.get(k) for k in ('place_name', 'rno', 'race_name', 'grade', 'post_time', 'surface', 'distance', 'going_turf', 'going_dirt', 'weather')} |
                          {'going': d.get('going_turf') or d.get('going_dirt'), 'verdict': '見送り', 'id': f"{d['place']}{d['rno']:02d}{day}",
                           'runners': [{'num': x['num'], 'waku': x['waku'], 'horse': x['horse'], 'jockey': x['jockey'], 'sexage': x['sexage'],
+                                       'sire': x.get('sire'), 'damsire': x.get('damsire'),
                                        'kg': x['kg'], 'odds': x['odds'], 'pop': x['pop'], 'mkt_p': x['mkt_p'],
                                        'score': x['ps_idx'], 'p_place': None, 'p_win': None, 'fair': None, 'ev': None,
                                        'runs': len(x.get('past') or []), 'cancel': False} for x in d['runners']]})

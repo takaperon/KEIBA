@@ -175,3 +175,16 @@ def parse_nar_result(html: str) -> dict:
         yens = [_num(x.replace('円', '')) for x in py.get_text('|', strip=True).split('|') if x]
         pay[kind] = [{'combo': c, 'yen': y} for c, y in zip(combos, yens)]
     return {'runners': rows, 'payouts': pay}
+
+
+def parse_pedigree(html):
+    """nar.netkeiba の馬柱ページ（/race/shutuba_past.html）から 馬名→(父, 母, 母父)。
+    馬欄は Horse01=父・Horse02=馬名・Horse03=母・Horse04=(母父)"""
+    s = BeautifulSoup(html, 'lxml')
+    out = {}
+    for tr in s.select('tr.HorseList'):
+        g = lambda c: (tr.select_one(c).get_text(strip=True) if tr.select_one(c) else '')
+        name = g('.Horse02')
+        if name:
+            out[name] = {'sire': g('.Horse01'), 'dam': g('.Horse03'), 'damsire': g('.Horse04').strip('()（）')}
+    return out
