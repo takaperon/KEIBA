@@ -1,0 +1,23 @@
+name: horse_form
+on:
+  workflow_dispatch:
+    inputs:
+      names: { description: 'comma separated', required: true }
+permissions:
+  contents: write
+jobs:
+  f:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: nardata
+          key: nar-data-none
+          restore-keys: nar-data-
+      - run: python3 scripts/horse_form.py "${{ inputs.names }}"
+      - run: |
+          cd fo && rm form.json && git init -q && git checkout -q -b horse-form
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m f
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" horse-form
