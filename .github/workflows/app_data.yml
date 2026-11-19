@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['scripts/app_data.py', 'scripts/app_day.txt', 'site_src/**', 'keiba/nk.py', 'keiba/noken.py', '.github/workflows/app_data.yml']
+    paths: ['scripts/app_data.py', 'scripts/app_day.txt', 'site_src/**', 'keiba/nk.py', 'keiba/noken.py', 'scripts/build_ped_data.py', '.github/workflows/app_data.yml']
 permissions:
   contents: write
   actions: write
@@ -38,10 +38,17 @@ jobs:
           path: nokendata
           key: noken-data-none
           restore-keys: noken-data-
+      - uses: actions/cache/restore@v4
+        with:
+          path: peddata
+          key: ped-data-none
+          restore-keys: ped-data-
+      - run: git fetch -q origin data && mkdir -p jradata && git --work-tree=jradata checkout origin/data -- races && git reset -q
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: pip install -q numpy pandas scikit-learn lightgbm beautifulsoup4 lxml cryptography
       - run: python3 scripts/app_data.py nardata
+      - run: python3 scripts/build_ped_data.py || echo "血統データ作成に失敗"
       - name: seal and push
         run: |
           mkdir -p ad && bash scripts/seal.sh appout/app.json ad/app.sealed && date -u > ad/built_at.txt
@@ -52,6 +59,7 @@ jobs:
       - name: build live site (Cloudflare Pages の site ブランチ)
         run: |
           rm -rf st && mkdir st && cp -r site_src/. st/ && python3 keiba/seal2.py appout/app.json st/data.json
+          for k in chiho chuo; do [ -f appout/ped_$k.json.gz ] && python3 keiba/seal2.py appout/ped_$k.json.gz st/ped_$k.json; done; ls -la st
           cd st && git init -q && git checkout -q -b site
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m site

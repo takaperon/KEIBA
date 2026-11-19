@@ -92,6 +92,7 @@ try:
     td['p_place'] = (td.p_place / td.groupby('race').p_place.transform('sum') * td.field.clip(upper=3)).clip(upper=.98)
     pred = {(r, int(n)): x for r, n, x in zip(td.race, td.num, td.to_dict('records'))}
     races = []
+    COURSE = json.load(open('peddata/course.json')) if os.path.exists('peddata/course.json') else {}
     # 血統（父・母父）：馬柱ページから1レース1回
     peds = {}
     for r in today:
@@ -103,6 +104,7 @@ try:
         inv = [1 / h['tan'] for h in r['runners'] if h.get('tan')]
         tot = sum(inv) or 1
         rr = {k: r.get(k) for k in ('place_name', 'rno', 'race_name', 'post_time', 'surface', 'distance', 'going', 'weather', 'odds_status')}
+        rr['turn'] = COURSE.get(f"{r['place']}|{r.get('surface')}|{r.get('distance')}")  # 右/左/直線（馬柱ページの表記から集めたもの）
         rr['runners'] = []
         for h in r['runners']:
             x = pred.get((r['id'], h['num']), {})
@@ -284,7 +286,9 @@ try:
             d = jra.parse_card(jra.decode(get('https://www.jra.go.jp/JRADB/accessD.html', ('cname=' + rc).encode())))
             d.update(jra.race_key(rc)); score_race(d)
             races.append({k: d.get(k) for k in ('place_name', 'rno', 'race_name', 'grade', 'post_time', 'surface', 'distance', 'going_turf', 'going_dirt', 'weather')} |
-                         {'going': d.get('going_turf') or d.get('going_dirt'), 'verdict': '見送り', 'id': f"{d['place']}{d['rno']:02d}{day}",
+                         {'going': d.get('going_turf') if d.get('surface') == '芝' else (d.get('going_dirt') or d.get('going_turf')),
+                          'turn': '直線' if '直線' in (d.get('course_detail') or '') else ('左' if '左' in (d.get('course_detail') or '') else ('右' if '右' in (d.get('course_detail') or '') else None)),
+                          'verdict': '見送り', 'id': f"{d['place']}{d['rno']:02d}{day}",
                           'runners': [{'num': x['num'], 'waku': x['waku'], 'horse': x['horse'], 'jockey': x['jockey'], 'sexage': x['sexage'],
                                        'sire': x.get('sire'), 'damsire': x.get('damsire'),
                                        'kg': x['kg'], 'odds': x['odds'], 'pop': x['pop'], 'mkt_p': x['mkt_p'],
