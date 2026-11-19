@@ -1,0 +1,29 @@
+name: sire_going
+on:
+  workflow_dispatch:
+    inputs:
+      sires: { required: true }
+      dams: { required: true }
+permissions:
+  contents: write
+jobs:
+  f:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: nardata
+          key: nar-data-none
+          restore-keys: nar-data-
+      - uses: actions/cache/restore@v4
+        with:
+          path: peddata
+          key: ped-data-none
+          restore-keys: ped-data-
+      - run: python3 scripts/sire_going.py "${{ inputs.sires }}" "${{ inputs.dams }}"
+      - run: |
+          cd fo && rm sg.json && git init -q && git checkout -q -b sire-going
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m f
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" sire-going
