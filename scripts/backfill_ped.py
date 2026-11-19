@@ -76,6 +76,13 @@ def fetch(x):
         course[f'{x[2]}|{cd[0]}|{cd[1]}'] = cd[2]
 
 
+def save():
+    state['empty'] = sorted(empty)
+    for f, d in (('ped.json', ped), ('course.json', course), ('state.json', state)):
+        json.dump(d, open(f'{a.out}/{f}.tmp', 'w'), ensure_ascii=False)
+        os.replace(f'{a.out}/{f}.tmp', f'{a.out}/{f}')
+
+
 done = False
 for x in races:
     if time.time() - T0 > a.max_minutes * 60:
@@ -86,6 +93,7 @@ for x in races:
         fetch(x)
         if state['fetched'] % 200 == 0:
             print(state['fetched'], 'pages', len(ped), 'horses', flush=True)
+            save()  # 途中で止められても集めた分が残るように
 else:
     done = True
 # 回りの向きが分からない (場, 芝ダ, 距離) は1レースずつ取る
