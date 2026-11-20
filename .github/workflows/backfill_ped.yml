@@ -28,7 +28,20 @@ jobs:
           restore-keys: ped-data-
       - run: git fetch -q origin data && mkdir -p jradata && git --work-tree=jradata checkout origin/data -- races && git reset -q
       - run: pip install -q beautifulsoup4 lxml
-      - run: set -o pipefail; python3 scripts/backfill_ped.py --max-minutes 300 --interval 10 --max-pages 1500 2>&1 | tail -40
+      - name: collect (JST 21:30〜翌7:30 の間だけ。定時実行が遅れて昼にずれ込んだら、レースのデータ取得と重ならないよう止める)
+        run: |
+          set -o pipefail
+          M=$(python3 -c "
+          import datetime as d
+          n=d.datetime.utcnow()+d.timedelta(hours=9)
+          end=n.replace(hour=7,minute=30,second=0)
+          if n.hour>=8 and (n.hour,n.minute)<(21,30): print(0)
+          else:
+            end = end if n<end else end+d.timedelta(days=1)
+            print(min(300,int((end-n).total_seconds()/60)))")
+          echo "使える時間 $M 分"
+          if [ "$M" -lt 20 ]; then echo "昼間なので取らない"; exit 0; fi
+          python3 scripts/backfill_ped.py --max-minutes $M --interval 10 --max-pages 1500 2>&1 | tail -40
       - uses: actions/cache/save@v4
         if: always()
         with:
