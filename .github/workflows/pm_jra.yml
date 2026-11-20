@@ -1,0 +1,28 @@
+name: pm_jra
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/pm_jra.py', '.github/workflows/pm_jra.yml']
+permissions:
+  contents: write
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: peddata
+          key: ped-data-none
+          restore-keys: ped-data-
+      - run: git fetch -q origin data && mkdir -p jradata && git --work-tree=jradata checkout origin/data -- races && git reset -q
+      - run: pip install -q numpy
+      - run: set -o pipefail; python3 scripts/pm_jra.py 2>&1 | tee vt.txt
+      - if: always()
+        run: |
+          mkdir -p an && cp vt.txt an/pm_jra.txt; git fetch -q origin analysis && for f in venue_time ext_compare pm_check pm_tune; do git show origin/analysis:$f.txt > an/$f.txt; done || true
+          cd an && git init -q && git checkout -q -b analysis
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m a
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" analysis
