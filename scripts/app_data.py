@@ -377,6 +377,29 @@ try:
                                        'score': x['ps_idx'], 'p_place': None, 'p_win': None, 'fair': None, 'ev': None,
                                        'runs': len(x.get('past') or []), 'cancel': False} for x in d['runners']]})
     races.sort(key=lambda r: (r['place_name'], r['rno']))
+    # 血統の狙い目印（中央）：2026-11-20 検証で ◎ は同じ人気帯の無印より3着内率 +0.6〜+7.6pt・複回90%、○ はほぼ差なし → ◎ だけ出す
+    try:
+        from keiba import ped_mark as PMK
+        pedj = json.load(open('peddata/ped.json')) if os.path.exists('peddata/ped.json') else {}
+        jh = {}
+        for fn in sorted(os.listdir('jradata/races')) if os.path.isdir('jradata/races') else []:
+            for l in open(f'jradata/races/{fn}'):
+                x = json.loads(l)
+                x['going'] = x.get('going_turf') if x.get('surface') == '芝' else (x.get('going_dirt') or x.get('going_turf'))
+                jh[x['id']] = x
+        if pedj and jh:
+            jgood = PMK.build(sorted(jh.values(), key=lambda r: r['date']), pedj, cday)
+            PLC = {v['place_name']: v['place'] for v in jh.values()}
+            nj = 0
+            for rr in races:
+                for h in rr['runners']:
+                    if h.get('sire') or h.get('damsire'):
+                        m, why = PMK.mark(jgood, PLC.get(rr['place_name']), rr.get('surface'), rr.get('distance'), rr.get('going'), h.get('sire'), h.get('damsire'), rr['place_name'])
+                        h['pm'], h['pm_why'] = (2, why) if m == 2 else (0, [])
+                        nj += m == 2
+            out['notes']['chuo_pm'] = f'血統印（中央は◎のみ）：得意条件 {len(jgood)}組から。◎ {nj}頭'
+    except Exception as e:  # noqa
+        out['notes']['chuo_pm'] = '血統印を作れず：' + str(e)[:100].replace('<', '').replace('>', '')
     try:
         st = jra.decode(get('https://www.jra.go.jp/JRADB/accessS.html', b'cname=pw01sli00/AF'))
         for c in [c for c in jra.cnames(st, 'pw01srl') if c[-11:-3] == cday]:
