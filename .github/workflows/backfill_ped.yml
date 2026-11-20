@@ -1,6 +1,8 @@
 name: backfill_ped
 # 血統（父・母・母父）の過去分を netkeiba の馬柱ページから集める（キャッシュに保存。件数だけ ped-status ブランチへ）
 on:
+  schedule:
+    - cron: '0 13 * * *'   # 毎晩 22:00 JST（レースのデータ取得と重ならない時間）
   workflow_dispatch:
 permissions:
   contents: write
@@ -26,7 +28,7 @@ jobs:
           restore-keys: ped-data-
       - run: git fetch -q origin data && mkdir -p jradata && git --work-tree=jradata checkout origin/data -- races && git reset -q
       - run: pip install -q beautifulsoup4 lxml
-      - run: set -o pipefail; python3 scripts/backfill_ped.py --max-minutes 300 2>&1 | tail -40
+      - run: set -o pipefail; python3 scripts/backfill_ped.py --max-minutes 300 --interval 10 --max-pages 1500 2>&1 | tail -40
       - uses: actions/cache/save@v4
         if: always()
         with:
@@ -40,8 +42,3 @@ jobs:
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m s
           git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ped-status
-      - name: chain
-        if: success() && hashFiles('peddata/DONE') == ''
-        run: |
-          curl -s -X POST -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/backfill_ped.yml/dispatches -d '{"ref":"main"}' -w "%{http_code}\n"

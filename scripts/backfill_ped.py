@@ -14,6 +14,8 @@ ap.add_argument('--nar', default='nardata')
 ap.add_argument('--jra', default='jradata')
 ap.add_argument('--out', default='peddata')
 ap.add_argument('--max-minutes', type=float, default=300)
+ap.add_argument('--interval', type=float, default=10.0)
+ap.add_argument('--max-pages', type=int, default=1500)  # 1回（1晩）に取るページの上限
 a = ap.parse_args()
 T0 = time.time()
 UA = 'Mozilla/5.0 (compatible; KEIBA-personal/0.1; +https://github.com/takaperon)'
@@ -25,7 +27,7 @@ _last = [0.0]
 
 
 def get(u):
-    w = 6.0 - (time.time() - _last[0])  # 先方が 503 を返した後なので間隔を広げる
+    w = a.interval - (time.time() - _last[0])  # 先方が 503 を返したことがあるので間隔を広くとる
     if w > 0:
         time.sleep(w)
     _last[0] = time.time()
@@ -86,6 +88,9 @@ def save():
         os.replace(f'{a.out}/{f}.tmp', f'{a.out}/{f}')
 
 
+n_this_run = [0]
+
+
 def main():
     for x in races:
         if time.time() - T0 > a.max_minutes * 60:
@@ -93,7 +98,9 @@ def main():
         if x[1] in empty:
             continue
         if any(hid and hid not in ped for hid, _ in x[6]):
-            fetch(x)
+            if n_this_run[0] >= a.max_pages:
+                return False
+            fetch(x); n_this_run[0] += 1
             if state['fetched'] % 200 == 0:
                 print(state['fetched'], 'pages', len(ped), 'horses', flush=True)
                 save()  # 途中で止められても集めた分が残るように
@@ -107,7 +114,9 @@ def main():
             continue
         seen.add(k)
         if f'{x[2]}|{x[3]}|{x[4]}' not in course and x[1] not in empty:
-            fetch(x)
+            if n_this_run[0] >= a.max_pages:
+                return False
+            fetch(x); n_this_run[0] += 1
     return True
 
 
