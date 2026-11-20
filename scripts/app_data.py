@@ -65,13 +65,17 @@ try:
     NF.build_variants(hist, std)
     rows = NF.build(hist + today, std)
     df = pd.DataFrame([dict(x['f'], race=x['race'], date=x['date'], num=x['num'], pos=x['pos'], tan=x['tan'], pop=x['pop']) for x in rows])
+    # 場のレベル差（VT、2026-11-20 検証：場を移った馬で 3着内 logloss −0.008、全体でも改善）
+    from keiba import venue_level as VL
+    vl_feats, VLVL, _ = VL.build(hist + today, std, train_end)
+    vl_cols = VL.attach(df, hist + today, vl_feats)
     REL = ['fig_best', 'fig_mean5', 'beaten_mean5', 'pospct_mean5', 'fig_last', 'pospct_last', 'dist_fit', 'venue_fit', 'going_fit',
            'corner1_pct', 'last3f_rel_mean', 'tr_top3', 'hw', 'kg']
     for c in REL:
         g = df.groupby('race')[c]
         df[c + '_z'] = (df[c] - g.transform('mean')) / g.transform('std').replace(0, np.nan)
     KEEP = ['G1_基礎能力', 'G2_直近調子', 'G3_距離適性', 'G4_コース適性', 'G8_脚質', 'G9_厩舎', 'G12_馬体重', 'G13_条件変化', 'G14_当日要素']
-    cols = ['field'] + sorted({c for g in KEEP for c in NF.GROUPS[g] + [x + '_z' for x in NF.GROUPS[g] if x in REL] if c != 'field'})
+    cols = ['field'] + sorted({c for g in KEEP for c in NF.GROUPS[g] + [x + '_z' for x in NF.GROUPS[g] if x in REL] if c != 'field'}) + vl_cols
     df['top3'] = ((df.pos >= 1) & (df.pos <= 3)).astype(int); df['win'] = (df.pos == 1).astype(int)
     past = df[(df.date < day) & (df.field >= 5)]
     cut = (datetime.date(int(day[:4]), int(day[4:6]), int(day[6:])) - datetime.timedelta(days=60)).strftime('%Y%m%d')
@@ -266,7 +270,7 @@ try:
     out['notes']['chiho_ped'] = f'血統（父・母父）：{n_all}頭中 {n_ped}頭'
     out['notes']['chiho_noken'] = (f'能検：新馬戦の出走馬 {n_need}頭のうち {n_hit}頭の結果あり' if n_need else '能検：今日の新馬戦なし') + f'（収録 {sum(len(v) for v in nk_idx.values())}頭分。南関東・門別・金沢は取得元なし）'
     out['modes']['chiho'] = races
-    out['notes']['chiho'] = ('独自指数 v2（オッズ不使用・過去2年で学習）。テスト1年で3着以内AUC0.79・確率の当たり具合は良好だが、'
+    out['notes']['chiho'] = ('独自指数 v3（オッズ不使用・過去2年で学習。v3で競馬場ごとのレベル差を追加＝前走と違う場の馬の予測が改善）。テスト1年で3着以内AUC0.79・確率の当たり具合は良好だが、'
                              'EV買いの回収率は64〜75%で100%に届かず、モデルと市場がずれた馬は市場どおりの結果だった。'
                              'そのため推奨買い目は出さず全レース「見送り」。EV・適正オッズは参考値。')
 except Exception as e:  # noqa
