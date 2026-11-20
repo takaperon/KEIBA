@@ -335,19 +335,23 @@ except Exception as e:  # noqa
 # ---------- 中央 ----------
 try:
     top = jra.decode(get('https://www.jra.go.jp/JRADB/accessD.html', b'cname=pw01dli00/F3'))
-    lists = [c for c in jra.cnames(top, 'pw01drl') if c[-11:-3] == day]
+    # 今日が開催日でなければ、出馬表が出ている一番近い開催日（例：金曜なら翌日の土曜）を出す
+    alld = sorted({c[-11:-3] for c in jra.cnames(top, 'pw01drl') if c[-11:-3] >= day})
+    cday = alld[0] if alld else day
+    out['chuo_date'] = cday
+    lists = [c for c in jra.cnames(top, 'pw01drl') if c[-11:-3] == cday]
     races = []
     for c in lists:
         h = jra.decode(get('https://www.jra.go.jp/JRADB/accessD.html', ('cname=' + c).encode()))
         for rc in jra.cnames(h, 'pw01dde'):
-            if rc[-11:-3] != day:
+            if rc[-11:-3] != cday:
                 continue
             d = jra.parse_card(jra.decode(get('https://www.jra.go.jp/JRADB/accessD.html', ('cname=' + rc).encode())))
             d.update(jra.race_key(rc)); score_race(d)
             races.append({k: d.get(k) for k in ('place_name', 'rno', 'race_name', 'grade', 'post_time', 'surface', 'distance', 'going_turf', 'going_dirt', 'weather')} |
                          {'going': d.get('going_turf') if d.get('surface') == '芝' else (d.get('going_dirt') or d.get('going_turf')),
                           'turn': '直線' if '直線' in (d.get('course_detail') or '') else ('左' if '左' in (d.get('course_detail') or '') else ('右' if '右' in (d.get('course_detail') or '') else None)),
-                          'verdict': '見送り', 'id': f"{d['place']}{d['rno']:02d}{day}",
+                          'verdict': '見送り', 'id': f"{d['place']}{d['rno']:02d}{cday}",
                           'runners': [{'num': x['num'], 'waku': x['waku'], 'horse': x['horse'], 'jockey': x['jockey'], 'sexage': x['sexage'],
                                        'sire': x.get('sire'), 'damsire': x.get('damsire'),
                                        'kg': x['kg'], 'odds': x['odds'], 'pop': x['pop'], 'mkt_p': x['mkt_p'],
@@ -356,10 +360,10 @@ try:
     races.sort(key=lambda r: (r['place_name'], r['rno']))
     try:
         st = jra.decode(get('https://www.jra.go.jp/JRADB/accessS.html', b'cname=pw01sli00/AF'))
-        for c in [c for c in jra.cnames(st, 'pw01srl') if c[-11:-3] == day]:
+        for c in [c for c in jra.cnames(st, 'pw01srl') if c[-11:-3] == cday]:
             h = jra.decode(get('https://www.jra.go.jp/JRADB/accessS.html', ('cname=' + c).encode()))
             for rc in jra.cnames(h, 'pw01sde'):
-                if rc[-11:-3] != day:
+                if rc[-11:-3] != cday:
                     continue
                 k = jra.race_key(rc)
                 rr = next((x for x in races if x['place_name'] == k['place_name'] and x['rno'] == k['rno']), None)

@@ -91,7 +91,7 @@ function sorted(rs){const f=SK[sk];return [...rs].sort((a,b)=>{if(sk==='num')ret
 const TH=(k,l,r)=>`<th class="s ${r?'r':''} ${sk===k?'on':''}" onclick="setS('${k}')">${l}${sk===k&&k!=='num'?'<span class=ar> ▼</span>':''}</th>`;
 const jst=()=>new Date(Date.now()+9*3600e3);
 const today=jst().toISOString().slice(0,10).replace(/-/g,'');
-const done=r=>today>D.date||(today===D.date&&(r.post_time||'99')<jst().toISOString().slice(11,16));
+const rdate=()=>mode==='chuo'&&D.chuo_date?D.chuo_date:D.date;const done=r=>today>rdate()||(today===rdate()&&(r.post_time||'99')<jst().toISOString().slice(11,16));
 const R=()=>D.modes[mode]||[];
 function setM(m){mode=m;if(typeof PQ!=='undefined')PQ.race=null;try{localStorage.setItem('km',m)}catch(e){};place=null;init();scrollTo(0,0)}
 function init(){
@@ -114,7 +114,7 @@ function render(){
   main.innerHTML=note()+(r?race(r):'');
 }
 const esc=t=>String(t??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-function note(){const n=(D.notes[mode]||'')+(mode==='chiho'&&D.notes.chiho_ext?'<br>'+D.notes.chiho_ext:'')+(mode==='chiho'&&D.notes.chiho_noken?'<br>'+D.notes.chiho_noken:'');const e=D.notes[mode+'_error'];return `<div class="warn">${n}${e?'<br>取得エラー：'+esc(e):''}</div>`}
+function note(){const cd=mode==='chuo'&&D.chuo_date&&D.chuo_date!==D.date?`<b>出馬表は ${+D.chuo_date.slice(4,6)}/${+D.chuo_date.slice(6)}（${'日月火水木金土'[new Date(+D.chuo_date.slice(0,4),+D.chuo_date.slice(4,6)-1,+D.chuo_date.slice(6)).getDay()]}）の分</b>（オッズは発売が始まってから）<br>`:'';const n=cd+(D.notes[mode]||'')+(mode==='chiho'&&D.notes.chiho_ext?'<br>'+D.notes.chiho_ext:'')+(mode==='chiho'&&D.notes.chiho_noken?'<br>'+D.notes.chiho_noken:'');const e=D.notes[mode+'_error'];return `<div class="warn">${n}${e?'<br>取得エラー：'+esc(e):''}</div>`}
 const SORTS=[['num','馬番'],['odds','単勝'],['score','SCORE'],['s2','合成'],['pp','3着内'],['ev','EV'],['ext','外部'],['mv','10→2分売れ'],['mv60','1時間前比'],['pos','着順']];
 let MV=(()=>{try{return localStorage.getItem('kb_mv')||'card'}catch(e){return 'card'}})();
 function setMV(v){MV=v;try{localStorage.setItem('kb_mv',v)}catch(e){}render()}
