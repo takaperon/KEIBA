@@ -1,6 +1,6 @@
 """血統の狙い目印（PM、2026-11-20 検証：テスト期間で同じHORSE見込みの馬より3着内率が0.5〜2.9ポイント高い。回収率は100%未満）。
 父・母父それぞれ、条件（芝ダ×距離帯／芝ダ×馬場[良稍・重不良]／競馬場）ごとの3着内率を同じ条件の全馬平均に向けて縮め（k=50）、
-n≥30 かつ 平均×1.2 以上なら得意条件。今回の条件で父・母父とも得意＝◎(2)、片方＝○(1)。"""
+n≥60 かつ 平均×1.3 以上なら得意条件（2026-11-20 PM-1b：検証期間で選び直し。旧 n≥30・×1.2 は印が半分以上の馬に付いた）。今回の条件で父・母父とも得意＝◎(2)、片方＝○(1)。"""
 import collections
 
 BANDN = {1: '〜1000', 2: '1100〜1300', 3: '1400〜1600', 4: '1700〜1900', 5: '2000〜'}
@@ -25,7 +25,7 @@ def label(a, v, place_name=None):
     return place_name or v
 
 
-def build(races, ped, until, k=50):
+def build(races, ped, until, k=50, nmin=60, ratio=1.3):
     cnt = collections.defaultdict(lambda: [0, 0]); base = collections.defaultdict(lambda: [0, 0])
     for r in races:
         if r['date'] >= until:
@@ -48,7 +48,7 @@ def build(races, ped, until, k=50):
     for (who, nm, a, v), (n, t) in cnt.items():
         bn, bt = base[(a, v)]
         br = bt / bn if bn else 0
-        if n >= 30 and (t + k * br) / (n + k) >= br * 1.2:
+        if n >= nmin and (t + k * br) / (n + k) >= br * ratio:
             good[(who, nm, a, v)] = (n, t / n, br)
     return good
 
