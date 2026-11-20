@@ -278,6 +278,25 @@ try:
         for rr in races:
             for h in rr['runners']:
                 h.pop('_sk', None)
+    # 血統の狙い目印（PM）：過去データ全部（当日より前）から父・母父の得意条件を作り、今回の条件に当てはめる
+    try:
+        from keiba import ped_mark as PMK
+        pedj = json.load(open('peddata/ped.json')) if os.path.exists('peddata/ped.json') else {}
+        if pedj:
+            good = PMK.build(hist, pedj, day)
+            np_ = 0
+            TD = {x['id']: x for x in today}
+            for rr in races:
+                r = TD.get(rr['id'])
+                if not r:
+                    continue
+                for h in rr['runners']:
+                    if h.get('sire') or h.get('damsire'):
+                        h['pm'], h['pm_why'] = PMK.mark(good, r['place'], r.get('surface'), r.get('distance'), r.get('going'), h.get('sire'), h.get('damsire'), rr['place_name'])
+                        np_ += h['pm'] > 0
+            out['notes']['chiho_pm'] = f'血統印：得意条件 {len(good)}組から（血統データ {len(pedj)}頭分・収集途中）。印のある馬 {np_}頭'
+    except Exception as e:  # noqa
+        out['notes']['chiho_pm'] = '血統印を作れず：' + str(e)[:100].replace('<', '').replace('>', '')
     # 能力検査（新馬・初出走の馬だけ）：collect_noken が集めた公式の結果を馬名で引く
     NOKEN_SRC = {'35': '岩手', '36': '岩手', '50': '兵庫', '51': '兵庫', '55': '佐賀', '48': '名古屋', '47': '笠松', '54': '高知'}
     NOKEN_NONE = {'42': '南関東の能検結果は nankankeiba.com にしかなく、取得用のサーバーから拒否される（403）',
