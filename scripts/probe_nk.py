@@ -1,16 +1,17 @@
-"""netkeiba が今アクセスを受け付けているかの確認（1回ずつだけ）"""
-import sys, time, urllib.request, os, subprocess
-UA = 'Mozilla/5.0 (compatible; KEIBA-personal/0.1; +https://github.com/takaperon)'
-os.makedirs('/tmp/s', exist_ok=True)
-st = []
-for u in ['https://nar.netkeiba.com/top/race_list_sub.html?kaisai_date=20261120',
-          'https://db.netkeiba.com/race/202644111911/',
-          'https://race.netkeiba.com/top/race_list_sub.html?kaisai_date=20261122']:
-    time.sleep(5)
-    try:
-        r = urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': UA}), timeout=30); st.append(f'{r.status} {u}')
-    except Exception as e:
-        st.append(f'ERR {str(e)[:60]} {u}')
-open('/tmp/s/status.txt', 'w').write('\n'.join(st)); print('\n'.join(st))
+"""JRA出馬表の一覧に何日・何場が載っているか（公開情報なので暗号化不要だが形式を合わせる）"""
+import sys, os, subprocess
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from keiba import jra
+from scripts.backfill import Fetcher
+f = Fetcher(10, 2)
+top = f.get('accessD.html', 'pw01dli00/F3')
+out = []
+for c in jra.cnames(top, 'pw01drl'):
+    out.append('drl ' + c)
+    h = f.get('accessD.html', c)
+    rs = jra.cnames(h, 'pw01dde')
+    out.append(f'   races {len(rs)} ' + ' '.join(sorted({r[-11:-3] for r in rs})) + ' ' + (rs[0] if rs else ''))
+print('\n'.join(out))
+os.makedirs('/tmp/s', exist_ok=True); open('/tmp/s/status.txt', 'w').write('\n'.join(out))
 subprocess.run('tar -C /tmp/s -czf /tmp/sample.tgz .', shell=True, check=True)
 subprocess.run(f'bash scripts/seal.sh /tmp/sample.tgz {sys.argv[1]}.sealed', shell=True, check=True)
