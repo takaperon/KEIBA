@@ -179,15 +179,35 @@ def run(cols, yname):
     mm = (te.venue_changed == 1).values
     out['moved'] = (log_loss(te[yname][mm], p[mm]), roc_auc_score(te[yname][mm], p[mm]))
     imp = dict(zip(cols, m.feature_importance('gain')))
+    out['pred'] = p
     return out, imp
 
 
+PRED = {}
 P('\n[VT-5] モデル比較（テスト期間 2025-11-17〜。学習〜2025-08-15・検証で打ち切り）')
 for yname, nm in (('top3', '3着以内'), ('win', '1着')):
     b, _ = run(base_cols, yname); n, imp = run(new_cols, yname)
+    PRED[yname] = (b['pred'], n['pred'])
     for k, lab in (('all', '全頭'), ('moved', '前走と違う場')):
         P(f'  {nm} {lab:<7} 今の要素 logloss={b[k][0]:.4f} AUC={b[k][1]:.3f} → ＋場のレベル差 logloss={n[k][0]:.4f} AUC={n[k][1]:.3f}  （logloss {n[k][0] - b[k][0]:+.4f}）')
     tot = sum(imp.values())
     P('    新要素の重要度（全体に占める割合）: ' + '  '.join(f'{c} {imp.get(c, 0) / tot:.1%}' for c in NEWC + [c + '_z' for c in NEWC if c + '_z' in imp]))
 n_te = int((df.split == 'test').sum()); n_mv = int(((df.split == 'test') & (df.venue_changed == 1)).sum())
 P(f'  テスト頭数 {n_te}（うち前走と違う場 {n_mv}）')
+
+# ---------- VT-6 偏りの確認：場ごと・月ごと（前走と違う場の馬、3着以内） ----------
+te = df[df.split == 'test'].copy()
+te['pb'], te['pn'] = PRED['top3']
+P('\n[VT-6] 前走と違う場の馬：今回の場ごとの logloss の改善（3着以内、マイナスほど良くなった）')
+x = te[te.venue_changed == 1]
+for pl, g in sorted(x.groupby('place'), key=lambda kv: -len(kv[1])):
+    if len(g) >= 300:
+        P(f'  {pl:<4} n={len(g):>5}  {log_loss(g.top3, g.pn, labels=[0, 1]) - log_loss(g.top3, g.pb, labels=[0, 1]):+.4f}')
+P('  月ごと:')
+for mo, g in x.groupby(x.date.str[:6]):
+    P(f'  {mo} n={len(g):>5}  {log_loss(g.top3, g.pn, labels=[0, 1]) - log_loss(g.top3, g.pb, labels=[0, 1]):+.4f}')
+P('  前走の場のレベル差（今回の場から見て、前走の場が強い/弱い）ごと:')
+for lo, hi, nm in ((-9, -0.3, '前走の場が弱い（0.3秒/km以上）'), (-0.3, 0.3, '同じくらい'), (0.3, 9, '前走の場が強い（0.3秒/km以上）')):
+    g = x[(x.lvl_from > lo) & (x.lvl_from <= hi)]
+    if len(g) > 100:
+        P(f'  {nm:<22} n={len(g):>5}  {log_loss(g.top3, g.pn, labels=[0, 1]) - log_loss(g.top3, g.pb, labels=[0, 1]):+.4f}  実際の3着内率 {g.top3.mean():.1%}')
