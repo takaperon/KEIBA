@@ -1,0 +1,37 @@
+name: ext_compare
+# HORSE指数と外部指数の比較。集計値だけを analysis ブランチへ
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/ext_compare.py', '.github/workflows/ext_compare.yml']
+permissions:
+  contents: write
+jobs:
+  v:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: nardata
+          key: nar-data-none
+          restore-keys: nar-data-
+      - uses: actions/cache/restore@v4
+        with:
+          path: extdata
+          key: ext-data-none
+          restore-keys: ext-data-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q numpy pandas scikit-learn lightgbm
+      - run: set -o pipefail; python3 scripts/ext_compare.py nardata extdata 2>&1 | grep -v Warning | tee vt.txt
+      - if: always()
+        run: |
+          mkdir -p an && cp vt.txt an/ext_compare.txt; git fetch -q origin analysis && git show origin/analysis:venue_time.txt > an/venue_time.txt || true 2>/dev/null || true
+          cd an && git init -q && git checkout -q -b analysis
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m a
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" analysis
