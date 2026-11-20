@@ -5,7 +5,7 @@
       v2 はテストで回収率100%を超えなかったので、推奨買い目は出さない（全レース「見送り」）。
 中央：JRA公式の当日出馬表（scripts/today.py と同じ）。中央の独自指数は検証前なので、暫定指数（未検証）を表示。
 """
-import gzip, json, os, re, sys, time, datetime, urllib.request
+import collections, gzip, json, os, re, sys, time, datetime, urllib.request
 import numpy as np, pandas as pd, lightgbm as lgb
 from sklearn.isotonic import IsotonicRegression
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -219,10 +219,65 @@ try:
                 ds = [devs[k].get(h['num']) for k in devs if devs[k].get(h['num']) is not None]
                 h['ext'] = round(sum(ds) / len(ds), 1) if ds else None
                 h['ext_n'] = len(ds)
+                sk = [devs[k].get(h['num']) for k in ('sbo', 'kayo') if devs[k].get(h['num']) is not None]
+                h['_sk'] = sum(sk) / len(sk) if sk else None  # 合成指数用（過去分がある2サイトだけ）
             rr['has_ext'] = any(h.get('ext') is not None for h in rr['runners'])
         out['notes']['chiho_ext'] = f'外部指数：水分ボンバー {len(sbo)}R・かよちん {len(kayo)}R・競馬ナビ {sum(1 for v in knavi.values() if v)}R' + ('（取得できず：' + '／'.join(ext_err) + '）' if ext_err else '')
     except Exception as e:  # noqa
         out['notes']['chiho_ext'] = '外部指数を取得できず：' + str(e)[:100].replace('<', '').replace('>', '')
+    # 合成指数：HORSE指数の要素＋外部指数（水分ボンバー・かよちんのレース内偏差値の平均）で学習し直したもの。
+    # 2026-11-20 検証：テスト期間の3着以内 AUC 0.794→0.810。外部指数がオッズを使っているかは不明なので HORSE指数とは別の列にする
+    try:
+        def _dev(vals):
+            xs = [v for v in vals.values() if v is not None]
+            if len(xs) < 3:
+                return {}
+            m = sum(xs) / len(xs); sd = (sum((x - m) ** 2 for x in xs) / len(xs)) ** .5 or 1
+            return {k: 50 + 10 * (v - m) / sd for k, v in vals.items() if v is not None}
+        exth = collections.defaultdict(dict)
+        for kind in ('sbo', 'kayo'):
+            dd = f'extdata/{kind}'
+            for fn in sorted(os.listdir(dd)) if os.path.isdir(dd) else []:
+                with gzip.open(f'{dd}/{fn}', 'rt') as f:
+                    for l in f:
+                        x = json.loads(l)
+                        exth[(x['date'], x['place'], int(x['rno']))][kind] = {int(k): (vv.get('avg') if isinstance(vv, dict) else vv) for k, vv in x['idx'].items()}
+        sk = {}
+        for r in hist:
+            e = exth.get((r['date'], r['place'], r['rno']))
+            if not e:
+                continue
+            ds = [_dev(e[k]) for k in ('sbo', 'kayo') if e.get(k)]
+            for h in r['runners']:
+                vs = [d[h['num']] for d in ds if h.get('num') in d]
+                if vs:
+                    sk[(r['id'], h['num'])] = sum(vs) / len(vs)
+        for rr in races:
+            for h in rr['runners']:
+                if h.get('_sk') is not None:
+                    sk[(rr['id'], h['num'])] = h['_sk']
+        df['ext_z'] = [sk.get((a, int(b))) if b == b else None for a, b in zip(df.race, df.num)]
+        df['ext_z'] = pd.to_numeric(df['ext_z'], errors='coerce'); df['ext_have'] = df.ext_z.notna().astype(int)
+        cols2 = cols + ['ext_z', 'ext_have']
+        past2 = df[(df.date < day) & (df.field >= 5)]
+        tr2, va2 = past2[past2.date < cut], past2[past2.date >= cut]
+        td2 = df[df.date == day].copy()
+        m2 = lgb.train(P, lgb.Dataset(tr2[cols2], tr2['top3']), 2000, valid_sets=[lgb.Dataset(va2[cols2], va2['top3'])], callbacks=[lgb.early_stopping(100, verbose=False)])
+        lt2 = lambda p: np.log(np.clip(p, 1e-4, .9999) / (1 - np.clip(p, 1e-4, .9999)))
+        ref2 = lt2(m2.predict(tr2[cols2].sample(min(50000, len(tr2)), random_state=1), num_iteration=m2.best_iteration))
+        td2['score2'] = 50 + 10 * (lt2(m2.predict(td2[cols2], num_iteration=m2.best_iteration)) - ref2.mean()) / ref2.std()
+        s2 = {(a, int(b)): v for a, b, v in zip(td2.race, td2.num, td2.score2)}
+        for rr in races:
+            for h in rr['runners']:
+                v = s2.get((rr['id'], h['num']))
+                h['score2'] = round(float(v), 1) if v is not None and v == v else None
+                h.pop('_sk', None)
+        out['notes']['chiho_score2'] = f'合成指数：HORSE指数の要素＋外部指数（水分ボンバー・かよちん）で学習（過去の外部指数 {len(sk)}頭分）'
+    except Exception as e:  # noqa
+        out['notes']['chiho_score2'] = '合成指数を作れず：' + str(e)[:100].replace('<', '').replace('>', '')
+        for rr in races:
+            for h in rr['runners']:
+                h.pop('_sk', None)
     # 能力検査（新馬・初出走の馬だけ）：collect_noken が集めた公式の結果を馬名で引く
     NOKEN_SRC = {'35': '岩手', '36': '岩手', '50': '兵庫', '51': '兵庫', '55': '佐賀', '48': '名古屋', '47': '笠松', '54': '高知'}
     NOKEN_NONE = {'42': '南関東の能検結果は nankankeiba.com にしかなく、取得用のサーバーから拒否される（403）',

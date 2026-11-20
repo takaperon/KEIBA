@@ -40,6 +40,11 @@ jobs:
           restore-keys: noken-data-
       - uses: actions/cache/restore@v4
         with:
+          path: extdata
+          key: ext-data-none
+          restore-keys: ext-data-
+      - uses: actions/cache/restore@v4
+        with:
           path: peddata
           key: ped-data-none
           restore-keys: ped-data-
