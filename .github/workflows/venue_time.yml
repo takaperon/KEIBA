@@ -1,0 +1,32 @@
+name: venue_time
+# 競馬場ごとの時計の違い（場のレベル差）の検証。集計値だけを analysis ブランチへ
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/venue_time.py', '.github/workflows/venue_time.yml']
+permissions:
+  contents: write
+jobs:
+  v:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: nardata
+          key: nar-data-none
+          restore-keys: nar-data-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q numpy pandas scikit-learn lightgbm
+      - run: set -o pipefail; python3 scripts/venue_time.py nardata 2>&1 | grep -v Warning | tee vt.txt
+      - if: always()
+        run: |
+          mkdir -p an && cp vt.txt an/venue_time.txt 2>/dev/null || true
+          cd an && git init -q && git checkout -q -b analysis
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m a
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" analysis
