@@ -3,7 +3,7 @@
 地方：nar.netkeiba の当日出馬表と単勝オッズ（API）。指数は v2 と同じ要素・同じ作り方で、
       過去2年分（キャッシュ）全部で学習し、直近60日で確率校正したモデル。オッズは EV にだけ使う。
       v2 はテストで回収率100%を超えなかったので、推奨買い目は出さない（全レース「見送り」）。
-中央：JRA公式の当日出馬表（scripts/today.py と同じ）。中央の独自指数は検証前なので、暫定指数（未検証）を表示。
+中央：JRA公式の当日出馬表（scripts/today.py と同じ）。HORSE指数（中央版、2026-11-21 検証済み）を表示。作れなかったときだけ暫定指数。
 """
 import collections, gzip, json, os, re, sys, time, datetime, urllib.request
 import numpy as np, pandas as pd, lightgbm as lgb
@@ -492,7 +492,7 @@ try:
     except Exception as e:  # noqa
         print('jra result ERR', e)
     out['modes']['chuo'] = races
-    out['notes']['chuo'] = '中央の独自指数は検証前。表示は暫定指数（近4走の着差×レースの格、未検証）。推奨買い目は出さない。'
+    out['notes'].setdefault('chuo', 'HORSE指数（中央版）を作れなかったので、暫定指数（近4走の着差×レースの格、未検証）を表示。推奨買い目は出さない。')
     if any('新馬' in (r.get('race_name') or '') for r in races):
         out['notes']['chuo'] += '<br>新馬戦：中央には地方のような能力検査（時計を計る検査レース）がなく、JRA公式サイトにゲート試験の時計も見当たらないため、能検タイムは出せない。'
 except Exception as e:  # noqa
