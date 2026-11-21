@@ -390,7 +390,7 @@ try:
             d = cards.get(rr['id'])
             if not d or d.get('surface') not in ('芝', 'ダ'):
                 continue
-            x = {'id': rr['id'], 'date': cday, 'place_code': d['place'], 'place': d['place'] + d['surface'], 'surface': d['surface'],
+            x = {'id': rr['id'], 'date': cday, 'place_name': rr['place_name'], 'place_code': d['place'], 'place': d['place'] + d['surface'], 'surface': d['surface'],
                  'distance': d.get('distance'), 'going': rr.get('going'), 'grade': d.get('grade'), 'cls': d.get('cls'), 'rno': d['rno'],
                  'post_time': d.get('post_time'), 'race_name': d.get('race_name') or ''}
             c = JM.jclass(x); x['race_name'] = f'CLS:{c}' if c is not None else ''
