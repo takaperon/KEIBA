@@ -1,0 +1,51 @@
+{
+ "errors": [],
+ "new_pages": {
+  "佐賀": 1
+ },
+ "zero_pages": [],
+ "by_src": {
+  "佐賀": {
+   "horses": 162,
+   "with_time": 133,
+   "days": 13,
+   "first": "20260410",
+   "last": "20261113"
+  },
+  "兵庫": {
+   "horses": 597,
+   "with_time": 597,
+   "days": 26,
+   "first": "20260525",
+   "last": "20261110"
+  },
+  "名古屋": {
+   "horses": 3,
+   "with_time": 3,
+   "days": 1,
+   "first": "20261113",
+   "last": "20261113"
+  },
+  "岩手": {
+   "horses": 1403,
+   "with_time": 1263,
+   "days": 107,
+   "first": "20220309",
+   "last": "20261120"
+  },
+  "笠松": {
+   "horses": 100,
+   "with_time": 94,
+   "days": 22,
+   "first": "20251203",
+   "last": "20261120"
+  },
+  "高知": {
+   "horses": 281,
+   "with_time": 271,
+   "days": 58,
+   "first": "20250524",
+   "last": "20261114"
+  }
+ }
+}
