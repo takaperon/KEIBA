@@ -20,7 +20,7 @@ concurrency:
 jobs:
   a:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache/restore@v4
@@ -63,6 +63,11 @@ jobs:
         with:
           path: knavidata
           key: knavi-data-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: 翌日の出走表（17〜23時だけ。結果・オッズは無し）
+        if: always()
+        run: |
+          H=$(TZ=Asia/Tokyo date +%H)
+          if [ $H -ge 17 ]; then APP_NEXT=1 timeout 30m python3 scripts/app_data.py nardata || echo "翌日分の作成に失敗"; fi
       - run: python3 scripts/build_ped_data.py || echo "血統データ作成に失敗"
       - name: seal and push
         run: |
@@ -74,6 +79,7 @@ jobs:
       - name: build live site (Cloudflare Pages の site ブランチ)
         run: |
           rm -rf st && mkdir st && cp -r site_src/. st/ && python3 keiba/seal2.py appout/app.json st/data.json
+          [ -f appout/app_next.json ] && python3 keiba/seal2.py appout/app_next.json st/data_next.json
           for k in chiho chuo; do [ -f appout/ped_$k.json.gz ] && python3 keiba/seal2.py appout/ped_$k.json.gz st/ped_$k.json; done; ls -la st
           cd st && git init -q && git checkout -q -b site
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A

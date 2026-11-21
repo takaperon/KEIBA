@@ -20,6 +20,9 @@ _fix = os.path.join(os.path.dirname(__file__), 'app_day.txt')  # 検証用：過
 if os.environ.get('APP_DAY') or os.path.exists(_fix):
     day = os.environ.get('APP_DAY') or open(_fix).read().strip()
     now = datetime.datetime(int(day[:4]), int(day[4:6]), int(day[6:]), 23, 59, tzinfo=JST)
+NEXT = os.environ.get('APP_NEXT') == '1'  # 翌日の出走表（夜に作る。結果・オッズはまだ無い）
+if NEXT:
+    day = (now + datetime.timedelta(days=1)).strftime('%Y%m%d')
 _last = [0.0]
 
 
@@ -33,7 +36,7 @@ def get(u, data=None):
         return r.read()
 
 
-out = {'date': day, 'built_at': now.strftime('%Y-%m-%d %H:%M'), 'modes': {}, 'notes': {}}
+out = {'date': day, 'built_at': now.strftime('%Y-%m-%d %H:%M'), 'modes': {}, 'notes': {}, 'next': NEXT}
 
 # ---------- 地方 ----------
 try:
@@ -50,7 +53,7 @@ try:
     for rid in ids:
         try:
             r = nk.parse_shutuba(get(f'https://nar.netkeiba.com/race/shutuba.html?race_id={rid}').decode('utf-8', 'replace'), rid)
-            j = json.loads(get(f'https://nar.netkeiba.com/api/api_get_nar_odds.html?race_id={rid}&type=1&action=update'))
+            j = {} if NEXT else json.loads(get(f'https://nar.netkeiba.com/api/api_get_nar_odds.html?race_id={rid}&type=1&action=update'))
             od = j.get('ary_odds') or {}
             for h in r['runners']:
                 o = od.get(f"{h['num']:02d}") or od.get(str(h['num'])) or {}
@@ -154,7 +157,7 @@ try:
     for rr in races:
         try:
             pt = rr.get('post_time') or '99:99'
-            if now.strftime('%H:%M') < (datetime.datetime.strptime(pt, '%H:%M') + datetime.timedelta(minutes=15)).strftime('%H:%M'):
+            if NEXT or now.strftime('%H:%M') < (datetime.datetime.strptime(pt, '%H:%M') + datetime.timedelta(minutes=15)).strftime('%H:%M'):
                 continue
             res = nk.parse_nar_result(get(f'https://nar.netkeiba.com/race/result.html?race_id={rr["id"]}').decode('utf-8', 'replace'))
             if not any(h.get('pos') for h in res['runners'].values()):
@@ -473,6 +476,8 @@ try:
     except Exception as e:  # noqa
         out['notes']['chuo_pm'] = '血統印を作れず：' + str(e)[:100].replace('<', '').replace('>', '')
     try:
+        if NEXT or cday > now.strftime('%Y%m%d'):
+            raise StopIteration  # まだ走っていない日は結果を取りに行かない
         st = jra.decode(get('https://www.jra.go.jp/JRADB/accessS.html', b'cname=pw01sli00/AF'))
         for c in [c for c in jra.cnames(st, 'pw01srl') if c[-11:-3] == cday]:
             h = jra.decode(get('https://www.jra.go.jp/JRADB/accessS.html', ('cname=' + c).encode()))
@@ -489,6 +494,8 @@ try:
                     x = pos.get(hh['num']) or {}
                     hh['pos'] = x.get('pos'); hh['pos_text'] = x.get('pos_text')
                 rr['payouts'] = {k2: v for k2, v in res['payouts'].items() if k2 in ('単勝', '複勝', 'ワイド', '馬連', '馬単', '3連複', '3連単')}
+    except StopIteration:
+        pass
     except Exception as e:  # noqa
         print('jra result ERR', e)
     out['modes']['chuo'] = races
@@ -500,5 +507,5 @@ except Exception as e:  # noqa
     print('chuo error', e)
 
 os.makedirs('appout', exist_ok=True)
-json.dump(out, open('appout/app.json', 'w'), ensure_ascii=False)
+json.dump(out, open('appout/app_next.json' if NEXT else 'appout/app.json', 'w'), ensure_ascii=False)
 print({k: len(v) for k, v in out['modes'].items()}, out['notes'].keys())
