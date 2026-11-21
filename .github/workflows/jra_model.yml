@@ -1,0 +1,28 @@
+name: jra_model
+# 中央版HORSE指数の検証。集計値だけを analysis ブランチへ
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/jra_model.py', '.github/workflows/jra_model.yml']
+permissions:
+  contents: write
+jobs:
+  v:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - run: git fetch -q origin data && mkdir -p jradata && git --work-tree=jradata checkout origin/data -- races && git reset -q
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q numpy pandas scikit-learn lightgbm
+      - run: set -o pipefail; python3 scripts/jra_model.py 2>&1 | grep -v Warning | tee vt.txt
+      - if: always()
+        run: |
+          mkdir -p an && cp vt.txt an/jra_model.txt; git fetch -q origin analysis && for f in venue_time ext_compare pm_check pm_tune pm_jra; do git show origin/analysis:$f.txt > an/$f.txt; done || true 2>/dev/null || true
+          cd an && git init -q && git checkout -q -b analysis
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m a
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" analysis
