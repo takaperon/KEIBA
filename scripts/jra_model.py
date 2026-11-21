@@ -129,13 +129,18 @@ def frame(races, until):
     df['top3'] = ((df.pos >= 1) & (df.pos <= 3)).astype(int); df['win'] = (df.pos == 1).astype(int)
     base = ['field'] + sorted({c for g in KEEP for c in NF.GROUPS[g] + [x + '_z' for x in NF.GROUPS[g] if x in REL] if c != 'field'})
     withj = base + JK + [c + '_z' for c in JK if c + '_z' in df.columns]
-    return df, base, withj
+    # 場のレベル差（VT、地方と同じ keiba/venue_level。場は「場コード＋芝ダ」、until より前だけで作る）
+    from keiba import venue_level as VL
+    vf, LVL, _ = VL.build(races, std, until, anchor='05芝')
+    vt = base + VL.attach(df, races, vf)
+    frame.LVL = LVL
+    return df, vt, withj, base
 
 
 if __name__ == '__main__':
     races = load()
     P(f'中央（平地）{len(races)}レース {races[0]["date"]}〜{races[-1]["date"]}')
-    df, base, withj = frame(races, TRAIN_END)
+    df, base, withj, base0 = frame(races, TRAIN_END)
     pv = provisional(races)
     df['prov'] = [pv.get((a, b)) for a, b in zip(df.race, df.num)]
     df['mkt'] = 1 / df.tan; df['mkt'] = df.mkt / df.groupby('race').mkt.transform('sum')
@@ -155,7 +160,7 @@ if __name__ == '__main__':
         x = te[te[col].notna()]
         P(f'  {nm:<20} {roc_auc_score(x.top3, x[col]):.3f}{"":<12} {roc_auc_score(x.win, x[col]):.3f}  （n={len(x)}）')
     preds = {}
-    for cols, nm in ((base, 'HORSE指数（中央版）'), (withj, 'HORSE指数＋騎手')):
+    for cols, nm in ((base0, 'HORSE（場の差なし）'), (base, 'HORSE＋場の差(VT)')):
         o = []
         for y in ('top3', 'win'):
             m = fit(cols, y); p = np.clip(m.predict(te[cols], num_iteration=m.best_iteration), 1e-6, 1 - 1e-6)
@@ -163,20 +168,34 @@ if __name__ == '__main__':
             if y == 'top3':
                 imp = dict(zip(cols, m.feature_importance('gain')))
         P(f'  {nm:<20} {o[0][0]:.3f} / {o[0][1]:.4f}      {o[1][0]:.3f} / {o[1][1]:.4f}')
-        if nm.endswith('騎手'):
-            tot = sum(imp.values()); top = sorted(imp.items(), key=lambda x: -x[1])[:12]
-            P('    重要な要素：' + '  '.join(f'{k} {v / tot:.0%}' for k, v in top))
+    tot = sum(imp.values()); top = sorted(imp.items(), key=lambda x: -x[1])[:12]
+    P('    重要な要素（VT版）：' + '  '.join(f'{k} {v / tot:.0%}' for k, v in top))
+    P('  場の補正 LVL（05芝=0、+は時計の割に強い場）：' + '  '.join(f'{k} {v:+.2f}' for k, v in sorted(frame.LVL.items(), key=lambda x: -x[1])))
     # 1位に推した馬の成績
-    te['p_b'] = preds[('HORSE指数（中央版）', 'top3')]; te['p_j'] = preds[('HORSE指数＋騎手', 'top3')]
+    te['p_b'] = preds[('HORSE（場の差なし）', 'top3')]; te['p_j'] = preds[('HORSE＋場の差(VT)', 'top3')]
     te['tany'] = np.where(te.win == 1, te.tan * 100, 0)
     P('\n[N6] レース内1位の馬（テスト期間）')
-    for col, nm in (('prov', '暫定指数1位'), ('p_b', 'HORSE1位'), ('p_j', 'HORSE＋騎手1位'), ('mkt', '1番人気')):
+    for col, nm in (('prov', '暫定指数1位'), ('p_b', 'HORSE1位'), ('p_j', 'HORSE+VT 1位'), ('mkt', '1番人気')):
         x = te[te[col].notna()]
         top = x.loc[x.groupby('race')[col].idxmax()]
         P(f'  {nm:<14} {len(top)}頭 勝率 {top.win.mean():5.1%} 3着内 {top.top3.mean():5.1%} 単勝回収 {top.tany.sum() / len(top):3.0f}%  平均人気 {top["pop"].mean():.1f}')
-    # 偏りの確認：月ごと・芝ダ別
-    P('\n[N6] 偏りの確認（3着以内 AUC：HORSE＋騎手 vs 暫定）')
+    # 偏りの確認：月ごと・場を移った馬・場ごと（VT版 vs 場の差なし）
+    P('\n[VT] 偏りの確認（3着以内 AUC：VT版 vs 場の差なし）')
     te['month'] = te.date.str[:6]
+    w = 0
     for mo, g in te.groupby('month'):
-        gg = g[g.prov.notna()]
-        P(f'  {mo} n={len(g):>5}  HORSE+騎手 {roc_auc_score(g.top3, g.p_j):.3f}  暫定 {roc_auc_score(gg.top3, gg.prov):.3f}')
+        a, b = roc_auc_score(g.top3, g.p_j), roc_auc_score(g.top3, g.p_b); w += a > b
+        P(f'  {mo} n={len(g):>5}  VT {a:.3f}  なし {b:.3f}')
+    P(f'  VT が良い月 {w}/{te.month.nunique()}')
+    mv = te[te.lvl_from.notna() & (te.lvl_from.abs() > 1e-9)]
+    st = te[te.lvl_from.notna() & (te.lvl_from.abs() <= 1e-9)]
+    for nm, g in (('前走と違う場（芝ダ替わり含む）', mv), ('前走と同じ場', st)):
+        if len(g) > 100:
+            P(f'  {nm:<18} n={len(g):>5}  AUC VT {roc_auc_score(g.top3, g.p_j):.3f} なし {roc_auc_score(g.top3, g.p_b):.3f}  '
+              f'logloss VT {log_loss(g.top3, np.clip(g.p_j, 1e-6, 1)):.4f} なし {log_loss(g.top3, np.clip(g.p_b, 1e-6, 1)):.4f}')
+    te['pl'] = te.race.str.split('-').str[1]
+    w = 0; n = 0
+    for pl, g in te.groupby('pl'):
+        if g.top3.nunique() > 1 and len(g) > 500:
+            a, b = roc_auc_score(g.top3, g.p_j), roc_auc_score(g.top3, g.p_b); w += a > b; n += 1
+    P(f'  VT が良い場 {w}/{n}')

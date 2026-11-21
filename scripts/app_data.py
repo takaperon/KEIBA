@@ -398,7 +398,7 @@ try:
                              'kg': h.get('kg'), 'sexage': (h.get('sexage') or '').split('/')[0], 'hw': None, 'pos': None, 'pos_text': ''} for h in d['runners']]
             todayj.append(x)
         if todayj:
-            dfj, basej, withj = JM.frame(histj + todayj, cday)
+            dfj, vtj, withj, basej = JM.frame(histj + todayj, cday)
             past = dfj[(dfj.date < cday) & (dfj.field >= 5)]
             vcut = sorted(past.date.unique())[-int(len(past.date.unique()) * 0.15)]
             trj, vaj = past[past.date < vcut], past[past.date >= vcut]
