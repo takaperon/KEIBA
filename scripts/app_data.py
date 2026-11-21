@@ -416,7 +416,7 @@ try:
                     h['score'] = round(float(v[0]), 1) if v else None
                     h['p_place'] = round(float(v[1]), 3) if v else None
                     nj += v is not None
-            out['notes']['chuo'] = (f'HORSE指数（中央版・オッズ不使用・騎手の成績は入れていない）。テスト期間2026年で3着以内AUC0.773（今までの暫定指数0.642、市場0.820）。'
+            out['notes']['chuo'] = (f'HORSE指数（中央版・オッズ不使用・騎手の成績は入れていない・地方と同じ作り）。テスト期間2026年で3着以内AUC0.773（今までの暫定指数0.642、市場0.820）。場のレベル差(VT)は中央では効かなかったので入れていない。'
                                     f'回収率では市場を上回っていないので推奨買い目は出さない。{nj}頭に指数')
     except Exception as e:  # noqa
         out['notes']['chuo_error'] = 'HORSE指数（中央）を作れず：' + str(e)[:150].replace('<', '').replace('>', '')
