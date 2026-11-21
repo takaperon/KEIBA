@@ -1,0 +1,15 @@
+{
+ "by_day": {
+  "20261121": {
+   "snapshots": 71,
+   "races": 11
+  }
+ },
+ "last_run": {
+  "day": "20261121",
+  "races": 24,
+  "snapshots_this_run": 0,
+  "errors": 0,
+  "ended": "2026-11-21 16:58"
+ }
+}
