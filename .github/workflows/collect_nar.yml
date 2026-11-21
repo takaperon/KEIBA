@@ -28,6 +28,13 @@ jobs:
           key: nar-odds-${{ github.run_id }}
           restore-keys: nar-odds-
       - run: echo "T0=$(date +%s)" >> $GITHUB_ENV && pip install -q beautifulsoup4 lxml
+      - name: 中央の締切前オッズ記録が止まっていれば起動（中央の開催がない日は向こうがすぐ終わる）
+        run: |
+          H=$(TZ=Asia/Tokyo date +%H)
+          if [ $H -ge 8 ] && [ $H -lt 16 ]; then
+            N=$(curl -s -H "Authorization: Bearer ${{ github.token }}" "https://api.github.com/repos/${{ github.repository }}/actions/workflows/collect_jra.yml/runs?per_page=5" | python3 -c "import json,sys;print(sum(1 for r in json.load(sys.stdin)['workflow_runs'] if r['status'] in ('queued','in_progress')))")
+            if [ "$N" = "0" ]; then curl -s -X POST -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }}/actions/workflows/collect_jra.yml/dispatches -d '{"ref":"main"}' -w "%{http_code}\n"; fi
+          fi
       - name: collect
         run: |
           H=$(TZ=Asia/Tokyo date +%H)
@@ -63,4 +70,8 @@ jobs:
           if [ $H -ge 8 ] && [ $H -lt 21 ]; then
             curl -s -X POST -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" \
               https://api.github.com/repos/${{ github.repository }}/actions/workflows/collect_nar.yml/dispatches -d '{"ref":"main"}' -w "%{http_code}\n"
+          else
+            # 夜は血統の収集へバトンを渡す（GitHub の定時実行が何時間も遅れるため、昼夜でつなぐ）
+            curl -s -X POST -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/${{ github.repository }}/actions/workflows/backfill_ped.yml/dispatches -d '{"ref":"main"}' -w "%{http_code}\n"
           fi

@@ -55,3 +55,13 @@ jobs:
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m s
           git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ped-status
+      - name: 朝になったら地方・中央のオッズ記録へバトンを渡す
+        if: always()
+        run: |
+          H=$(TZ=Asia/Tokyo date +%H)
+          if [ $H -ge 6 ] && [ $H -lt 12 ]; then
+            for w in collect_nar collect_jra; do
+              curl -s -X POST -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" \
+                https://api.github.com/repos/${{ github.repository }}/actions/workflows/$w.yml/dispatches -d '{"ref":"main"}' -w "$w %{http_code}\n"
+            done
+          fi
