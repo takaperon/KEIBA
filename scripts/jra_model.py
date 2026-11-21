@@ -134,6 +134,24 @@ def frame(races, until):
     vf, LVL, _ = VL.build(races, std, until, anchor='05芝')
     vt = base + VL.attach(df, races, vf)
     frame.LVL = LVL
+    # 芝の開幕週（その場で4週間以上あいてから1〜2日目／3〜4日目）×馬番（BI-6：開幕週の芝は内枠が来やすい）
+    import datetime
+    dd = lambda x: datetime.date(int(x[:4]), int(x[4:6]), int(x[6:]))
+    ds = collections.defaultdict(set)
+    for r in races:
+        ds[r.get('place_code') or r['place'][:2]].add(r['date'])
+    nth = {}
+    for pc, xs in ds.items():
+        prev = None; n = 99
+        for x in sorted(xs):
+            n = 1 if prev is None or (dd(x) - dd(prev)).days >= 28 else n + 1
+            nth[(pc, x)] = n if prev is not None else 99; prev = x
+    rinfo = {r['id']: (nth.get((r.get('place_code') or r['place'][:2], r['date']), 99), r.get('surface') or r['place'][2:]) for r in races}
+    df['op12'] = [int(rinfo[x][1] == '芝' and rinfo[x][0] <= 2) for x in df.race]
+    df['op34'] = [int(rinfo[x][1] == '芝' and 3 <= rinfo[x][0] <= 4) for x in df.race]
+    df['op12_gate'] = df.op12 * (df.num_pct - 0.5); df['op34_gate'] = df.op34 * (df.num_pct - 0.5)
+    frame.OP = ['op12', 'op34', 'op12_gate', 'op34_gate']
+    frame.with_op = base + frame.OP
     KN = [g for g in KEEP if g not in ('G5_馬場適性', 'G6_枠順', 'G7_展開')]
     frame.nar_same = ['field'] + sorted({c for g in KN for c in NF.GROUPS[g] + [x + '_z' for x in NF.GROUPS[g] if x in REL] if c != 'field'})
     return df, vt, withj, base
@@ -162,42 +180,41 @@ if __name__ == '__main__':
         x = te[te[col].notna()]
         P(f'  {nm:<20} {roc_auc_score(x.top3, x[col]):.3f}{"":<12} {roc_auc_score(x.win, x[col]):.3f}  （n={len(x)}）')
     preds = {}
-    for cols, nm in ((frame.nar_same, 'HORSE（地方と同じ要素）'), (base0, 'HORSE（場の差なし）'), (base, 'HORSE＋場の差(VT)')):
+    for cols, nm in ((base0, 'HORSE（今のアプリ）'), (frame.with_op, 'HORSE＋芝の開幕週×馬番')):
         o = []
         for y in ('top3', 'win'):
             m = fit(cols, y); p = np.clip(m.predict(te[cols], num_iteration=m.best_iteration), 1e-6, 1 - 1e-6)
             o.append((roc_auc_score(te[y], p), log_loss(te[y], p))); preds[(nm, y)] = p
             if y == 'top3':
                 imp = dict(zip(cols, m.feature_importance('gain')))
-        P(f'  {nm:<20} {o[0][0]:.3f} / {o[0][1]:.4f}      {o[1][0]:.3f} / {o[1][1]:.4f}')
+        P(f'  {nm:<20} {o[0][0]:.4f} / {o[0][1]:.4f}      {o[1][0]:.4f} / {o[1][1]:.4f}')
     tot = sum(imp.values()); top = sorted(imp.items(), key=lambda x: -x[1])[:12]
-    P('    重要な要素（VT版）：' + '  '.join(f'{k} {v / tot:.0%}' for k, v in top))
-    P('  場の補正 LVL（05芝=0、+は時計の割に強い場）：' + '  '.join(f'{k} {v:+.2f}' for k, v in sorted(frame.LVL.items(), key=lambda x: -x[1])))
+    P('    開幕週の要素の重み：' + '  '.join(f'{k} {imp.get(k, 0) / sum(imp.values()):.2%}' for k in frame.OP))
+    P('    重要な要素：' + '  '.join(f'{k} {v / tot:.0%}' for k, v in top))
+    0 and P('  場の補正 LVL（05芝=0、+は時計の割に強い場）：' + '  '.join(f'{k} {v:+.2f}' for k, v in sorted(frame.LVL.items(), key=lambda x: -x[1])))
     # 1位に推した馬の成績
-    te['p_b'] = preds[('HORSE（場の差なし）', 'top3')]; te['p_j'] = preds[('HORSE＋場の差(VT)', 'top3')]
+    te['p_b'] = preds[('HORSE（今のアプリ）', 'top3')]; te['p_j'] = preds[('HORSE＋芝の開幕週×馬番', 'top3')]
     te['tany'] = np.where(te.win == 1, te.tan * 100, 0)
     P('\n[N6] レース内1位の馬（テスト期間）')
-    for col, nm in (('prov', '暫定指数1位'), ('p_b', 'HORSE1位'), ('p_j', 'HORSE+VT 1位'), ('mkt', '1番人気')):
+    for col, nm in (('prov', '暫定指数1位'), ('p_b', 'HORSE1位'), ('p_j', '＋開幕週 1位'), ('mkt', '1番人気')):
         x = te[te[col].notna()]
         top = x.loc[x.groupby('race')[col].idxmax()]
         P(f'  {nm:<14} {len(top)}頭 勝率 {top.win.mean():5.1%} 3着内 {top.top3.mean():5.1%} 単勝回収 {top.tany.sum() / len(top):3.0f}%  平均人気 {top["pop"].mean():.1f}')
-    # 偏りの確認：月ごと・場を移った馬・場ごと（VT版 vs 場の差なし）
-    P('\n[VT] 偏りの確認（3着以内 AUC：VT版 vs 場の差なし）')
-    te['month'] = te.date.str[:6]
-    w = 0
+    # 偏りの確認（開幕週版 vs 今）
+    P('\n[OP] 偏りの確認（3着以内 logloss の差：開幕週版 − 今。マイナスなら良くなった）')
+    te['month'] = te.date.str[:6]; w = 0
     for mo, g in te.groupby('month'):
-        a, b = roc_auc_score(g.top3, g.p_j), roc_auc_score(g.top3, g.p_b); w += a > b
-        P(f'  {mo} n={len(g):>5}  VT {a:.3f}  なし {b:.3f}')
-    P(f'  VT が良い月 {w}/{te.month.nunique()}')
-    mv = te[te.lvl_from.notna() & (te.lvl_from.abs() > 1e-9)]
-    st = te[te.lvl_from.notna() & (te.lvl_from.abs() <= 1e-9)]
-    for nm, g in (('前走と違う場（芝ダ替わり含む）', mv), ('前走と同じ場', st)):
-        if len(g) > 100:
-            P(f'  {nm:<18} n={len(g):>5}  AUC VT {roc_auc_score(g.top3, g.p_j):.3f} なし {roc_auc_score(g.top3, g.p_b):.3f}  '
-              f'logloss VT {log_loss(g.top3, np.clip(g.p_j, 1e-6, 1)):.4f} なし {log_loss(g.top3, np.clip(g.p_b, 1e-6, 1)):.4f}')
-    te['pl'] = te.race.str.split('-').str[1]
-    w = 0; n = 0
-    for pl, g in te.groupby('pl'):
-        if g.top3.nunique() > 1 and len(g) > 500:
-            a, b = roc_auc_score(g.top3, g.p_j), roc_auc_score(g.top3, g.p_b); w += a > b; n += 1
-    P(f'  VT が良い場 {w}/{n}')
+        a = log_loss(g.top3, g.p_j, labels=[0, 1]) - log_loss(g.top3, g.p_b, labels=[0, 1]); w += a < 0
+        P(f'  {mo} n={len(g):>5}  {a:+.4f}')
+    P(f'  良くなった月 {w}/{te.month.nunique()}')
+    for k, nm in (('op12', '芝の開幕週1〜2日'), ('op34', '芝の開幕3〜4日')):
+        g = te[te[k] == 1]
+        if len(g) > 300:
+            P(f'  {nm} n={len(g)}（{g.race.nunique()}レース）logloss 今 {log_loss(g.top3, g.p_b):.4f} → 開幕週版 {log_loss(g.top3, g.p_j):.4f}  '
+              f'AUC {roc_auc_score(g.top3, g.p_b):.4f} → {roc_auc_score(g.top3, g.p_j):.4f}')
+            g = g.assign(gate3=pd.cut(g.num_pct, [-1, 1 / 3, 2 / 3, 2], labels=['内', '中', '外']))
+            P('    枠ごとの3着内率（実際／今の予想／開幕週版の予想）：' + '  '.join(
+                f'{a}：{x.top3.mean():.1%}/{x.p_b.mean():.1%}/{x.p_j.mean():.1%}' for a, x in g.groupby('gate3', observed=True)))
+    g = te[(te.op12 == 0) & (te.op34 == 0)]
+    P(f'  それ以外 n={len(g)} logloss 今 {log_loss(g.top3, g.p_b):.4f} → 開幕週版 {log_loss(g.top3, g.p_j):.4f}')
+    # 芝の開幕週で内枠（馬番が前1/3）の馬の単勝・複勝の回収（参考）
