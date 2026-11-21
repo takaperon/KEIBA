@@ -242,3 +242,25 @@ x = te[te.sd_n >= 3]
 if len(x) > 1000:
     for nm in ('＋当日の前のレース', '＋前の開催日'):
         P(f'  前のレース3以上のレースだけ（n={len(x)}）{nm}：logloss の差 {log_loss(x.top3, x["p_" + nm]) - log_loss(x.top3, x["p_今のHORSE"]):+.4f}')
+
+# ---------- BI-5 なぜ指数が良くならないか ----------
+P('\n[BI-5] 傾向が出た日に、前に行きそうな馬（過去の4角位置が前1/3）は今のHORSEの予想より多く3着に来ているか（テスト期間）')
+cur = {}
+for r in races:
+    fin = [h for h in r['runners'] if h.get('pos') and h.get('corners')]
+    for h in fin:
+        cur[(r['id'], h.get('num'))] = (h['corners'][-1] - 1) / max(1, len(fin) - 1)
+te['cl_today'] = [cur.get((a, b)) for a, b in zip(te.race, te.num)]
+x = te[te.cl_today.notna() & te.corner_last_pct.notna()]
+P(f'  過去の4角位置と今回の4角位置の相関：{np.corrcoef(x.corner_last_pct, x.cl_today)[0, 1]:+.2f}（低いほど「前に行く馬」を当てにくい）')
+te['sty3'] = pd.cut(te.corner_last_pct, [-1, 1 / 3, 2 / 3, 2], labels=['前', '中', '後'])
+te['gate3'] = pd.cut(te.num_pct, [-1, 1 / 3, 2 / 3, 2], labels=['内', '中', '外'])
+for key, lab, grp in (('sd_fb_s', '当日の前のレース', 'sty3'), ('pd_fb', '前の開催日', 'sty3'), ('c_fb', 'コース', 'sty3'),
+                      ('sd_ib_s', '当日の前のレース', 'gate3'), ('pd_ib', '前の開催日', 'gate3'), ('c_ib', 'コース', 'gate3')):
+    y = te[te[key].notna()]
+    if key.startswith('sd'):
+        y = y[y.sd_n >= 3]
+    q = y[key].quantile([.2, .8]).values
+    for nm, g in (('前残り/内枠が強い日（下位20%）', y[y[key] <= q[0]]), ('差し/外枠が強い日（上位20%）', y[y[key] >= q[1]])):
+        s = '  '.join(f'{k}：実際{gg.top3.mean():.1%} 予想{gg["p_今のHORSE"].mean():.1%}' for k, gg in g.groupby(grp, observed=True))
+        P(f'  {lab}・{nm}  {s}')
