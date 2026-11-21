@@ -402,11 +402,11 @@ try:
             past = dfj[(dfj.date < cday) & (dfj.field >= 5)]
             vcut = sorted(past.date.unique())[-int(len(past.date.unique()) * 0.15)]
             trj, vaj = past[past.date < vcut], past[past.date >= vcut]
-            mj = lgb.train(JM.PARAMS, lgb.Dataset(trj[withj], trj['top3']), 3000, valid_sets=[lgb.Dataset(vaj[withj], vaj['top3'])], callbacks=[lgb.early_stopping(100, verbose=False)])
+            mj = lgb.train(JM.PARAMS, lgb.Dataset(trj[basej], trj['top3']), 3000, valid_sets=[lgb.Dataset(vaj[basej], vaj['top3'])], callbacks=[lgb.early_stopping(100, verbose=False)])
             lg = lambda p: np.log(np.clip(p, 1e-4, .9999) / (1 - np.clip(p, 1e-4, .9999)))
-            ref = lg(mj.predict(trj[withj].sample(min(40000, len(trj)), random_state=1), num_iteration=mj.best_iteration))
+            ref = lg(mj.predict(trj[basej].sample(min(40000, len(trj)), random_state=1), num_iteration=mj.best_iteration))
             tdj = dfj[dfj.date == cday].copy()
-            pj = mj.predict(tdj[withj], num_iteration=mj.best_iteration)
+            pj = mj.predict(tdj[basej], num_iteration=mj.best_iteration)
             tdj['sc'] = 50 + 10 * (lg(pj) - ref.mean()) / ref.std(); tdj['pp'] = pj
             S = {(a, int(b)): (v, q) for a, b, v, q in zip(tdj.race, tdj.num, tdj.sc, tdj.pp)}
             nj = 0
@@ -416,7 +416,7 @@ try:
                     h['score'] = round(float(v[0]), 1) if v else None
                     h['p_place'] = round(float(v[1]), 3) if v else None
                     nj += v is not None
-            out['notes']['chuo'] = (f'HORSE指数（中央版・オッズ不使用・騎手の成績入り）。テスト期間2026年で3着以内AUC0.781（今までの暫定指数0.642、市場0.820）。'
+            out['notes']['chuo'] = (f'HORSE指数（中央版・オッズ不使用・騎手の成績は入れていない）。テスト期間2026年で3着以内AUC0.773（今までの暫定指数0.642、市場0.820）。'
                                     f'回収率では市場を上回っていないので推奨買い目は出さない。{nj}頭に指数')
     except Exception as e:  # noqa
         out['notes']['chuo_error'] = 'HORSE指数（中央）を作れず：' + str(e)[:150].replace('<', '').replace('>', '')
