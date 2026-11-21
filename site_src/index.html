@@ -124,7 +124,7 @@ function raceIdx(r){const isN=mode==='chiho',ext=!!r.has_ext;
   const rs=rankOf(r,h=>h.score),re=rankOf(r,h=>h.ext),r2=rankOf(r,h=>h.score2);
   const H=(k,l,c)=>`<th class="${c||''} ${sk===k?'on':''}" ${k?`onclick="setS('${k}')"`:''}>${l}${k&&sk===k&&k!=='num'?'▼':''}</th>`;
   const cols=`<colgroup><col style="width:26px"><col><col style="width:54px">${ext?`<col style="width:54px">`:``}${ext&&isN?`<col style="width:54px">`:``}<col style="width:34px"><col style="width:42px"></colgroup>`;
-  const head=`<tr>${H('num','番','l')}<th class="l">馬名</th>${H('score',isN?'HORSE':'暫定','sep')}${ext?H('ext','外部'):''}${ext&&isN?H('s2','合成'):''}${H('pm','血統')}${H('odds','単勝','sep')}</tr>`;
+  const head=`<tr>${H('num','番','l')}<th class="l">馬名</th>${H('score','HORSE','sep')}${ext?H('ext','外部'):''}${ext&&isN?H('s2','合成'):''}${H('pm','血統')}${H('odds','単勝','sep')}</tr>`;
   const v=(x,rk)=>`<td class="v ${rk&&rk<=3?'r'+rk:''}">${x??'-'}${rk?`<sup>${rk}</sup>`:''}</td>`;
   const rows=sorted(r.runners).map(h=>{const a=rs(h),b=re(h);
     return `<tr class="${h.cancel?'cx':''}"><td class="l"><span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'};min-width:20px;font-size:12px">${h.num}</span></td><td class="l nm">${h.pos!=null?`<span class="ps ${h.pos<=3?'p'+h.pos:''}" style="width:18px;height:18px;font-size:11px">${h.pos}</span> `:''}${esc(h.horse)}</td>
@@ -133,7 +133,7 @@ function raceIdx(r){const isN=mode==='chiho',ext=!!r.has_ext;
 const WIDE=()=>innerWidth>=760;addEventListener('resize',()=>{if(VIEW==='race'&&D.date)render()});
 function raceTable(r){const isN=mode==='chiho';const fin=r.runners.some(h=>h.pos!=null);const mvs=isN&&r.has_moves;const ext=!!r.has_ext;
   const H=(k,l,c)=>`<th class="${c||''} ${sk===k?'on':''}" onclick="setS('${k}')">${l}${sk===k&&k!=='num'?' ▼':''}</th>`;
-  const head=`<tr>${fin?H('pos','着','l'):''}${H('num','番','l')}<th class="l">馬名</th><th class="l">騎手</th>${H('odds','単勝')}<th>人気</th>${H('score',isN?'HORSE指数':'暫定指数','sep')}${ext?H('ext','外部指数')+(isN?'<th>水</th><th>か</th>':'')+'<th>ナ</th>'+(isN?H('s2','合成','sep'):''):''}${isN?H('pp','3着内','sep')+H('ev','EV')+'<th>適正</th>':''}${mvs?H('mv','10→2分','sep')+H('mv60','1h前比'):''}${H('pm','血統','sep')}<th class="l sep">父 × 母父</th></tr>`;
+  const head=`<tr>${fin?H('pos','着','l'):''}${H('num','番','l')}<th class="l">馬名</th><th class="l">騎手</th>${H('odds','単勝')}<th>人気</th>${H('score','HORSE指数','sep')}${ext?H('ext','外部指数')+(isN?'<th>水</th><th>か</th>':'')+'<th>ナ</th>'+(isN?H('s2','合成','sep'):''):''}${isN?H('pp','3着内','sep')+H('ev','EV')+'<th>適正</th>':''}${mvs?H('mv','10→2分','sep')+H('mv60','1h前比'):''}${H('pm','血統','sep')}<th class="l sep">父 × 母父</th></tr>`;
   const q=(h,o)=>`openPed(${JSON.stringify(Object.assign({race:rctx(r)},o)).replace(/"/g,'&quot;')})`;
   const rows=sorted(r.runners).map(h=>`<tr class="${h.cancel?'cx':''} ${mvs?mvc(h):''}">${fin?`<td class="l">${h.pos!=null?`<span class="ps ${h.pos<=3?'p'+h.pos:''}">${h.pos}</span>`:`<span class="pop">${h.pos_text||''}</span>`}</td>`:''}
     <td class="l"><span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'}">${h.num}</span></td>
@@ -155,10 +155,10 @@ function race(r){
     const odds=h.final_tan??h.odds;
     const live=h.prev_odds&&h.prev_odds!==h.odds?`<span class="lv ${h.odds<h.prev_odds?'dn':'upx'}">${h.odds<h.prev_odds?'↓':'↑'}${h.prev_odds}</span> `:'';
     const mt=[];const sl=(l,v,cls,sub)=>`<i>${l}</i><b class="${cls||''}">${v??'-'}</b>${sub?`<i>${sub}</i>`:''}`;
-    mt.push(sl(isN?'SCORE':'暫定指数',h.score,isTop(r,h)?'s1':''));
+    mt.push(sl('SCORE',h.score,isTop(r,h)?'s1':''));
     if(r.has_ext)mt.push(sl('外部指数',h.ext,'',`${h.ext_sbo!=null?'水'+h.ext_sbo:''}${h.ext_kayo!=null?' か'+h.ext_kayo:''}${h.ext_knavi!=null?' ナ'+h.ext_knavi:''}`));
     if(isN&&r.has_ext)mt.push(sl('合成',h.score2));
-    if(isN)mt.push(sl('3着内',h.p_place!=null?Math.round(h.p_place*100)+'%':null));
+    if(isN||h.p_place!=null)mt.push(sl('3着内',h.p_place!=null?Math.round(h.p_place*100)+'%':null));
     if(isN)mt.push(sl('EV',h.ev,'',h.fair?'適正'+h.fair:''));
     if(mvs&&h.mv10_2!=null)mt.push(sl('10→2分',pct(h.mv10_2),'mv '+(h.mv10_2>0.15?'up':''),h.mv60_2!=null?'1h前比'+pct(h.mv60_2):''));
     const posb=fin?(h.pos!=null?`<span class="ps ${h.pos<=3?'p'+h.pos:''}">${h.pos}</span>`:`<span class="pop">${h.pos_text||''}</span>`):'';
@@ -175,7 +175,7 @@ function race(r){
   ${isN?nkTable(r):''}
   ${r.payouts&&Object.keys(r.payouts).length?`<div class="pay">${Object.entries(r.payouts).map(([k,v])=>`<div><b>${k}</b><span>${v.map(x=>x.combo+'　'+Number(x.yen).toLocaleString()+'円').join('<br>')}</span></div>`).join('')}</div>`:''}
   ${mvs?`<div class="leg"><span><i style="background:var(--hot)"></i>10分前→2分前で単勝オッズ30%以上下落（急に売れた）</span><span><i style="background:var(--warn)"></i>15〜30%下落</span><span class="up">＋は売れなかった</span></div>`:''}
-  <div class="lg">${isN?'SCORE＝オッズを使わない能力指数（50が平均）。3着内＝3着以内に入る確率。適正＝1着確率から計算した単勝の理論オッズ。EV＝1着確率×実際の単勝オッズ（参考値）。父・母父を押すとその血統の条件別成績。':'暫定指数＝近4走の着差をレースの格で補正しただけのもの（未検証）。父・母父を押すとその血統の条件別成績。'}</div></div>`;
+  <div class="lg">${isN?'SCORE＝オッズを使わない能力指数（50が平均）。3着内＝3着以内に入る確率。適正＝1着確率から計算した単勝の理論オッズ。EV＝1着確率×実際の単勝オッズ（参考値）。父・母父を押すとその血統の条件別成績。':'HORSE指数（中央版）＝オッズを使わない独自指数（騎手の成績入り。2026年のテストで3着以内の当たり具合AUC0.781）。3着内＝3着以内に入る確率。父・母父を押すとその血統の条件別成績。'}</div></div>`;
 }
 function pedLine(h,r){if(h.sire==null&&h.damsire==null)return '';if(!h.sire&&!h.damsire)return '<div class="l3">血統の掲載なし</div>';
   const q=(o)=>`openPed(${JSON.stringify(Object.assign({race:rctx(r)},o)).replace(/"/g,'&quot;')})`;

@@ -360,6 +360,7 @@ try:
     out['chuo_date'] = cday
     lists = [c for c in jra.cnames(top, 'pw01drl') if c[-11:-3] == cday]
     races = []
+    cards = {}
     for c in lists:
         h = jra.decode(get('https://www.jra.go.jp/JRADB/accessD.html', ('cname=' + c).encode()))
         for rc in jra.cnames(h, 'pw01dde'):
@@ -367,6 +368,7 @@ try:
                 continue
             d = jra.parse_card(jra.decode(get('https://www.jra.go.jp/JRADB/accessD.html', ('cname=' + rc).encode())))
             d.update(jra.race_key(rc)); score_race(d)
+            cards[f"{d['place']}{d['rno']:02d}{cday}"] = d
             races.append({k: d.get(k) for k in ('place_name', 'rno', 'race_name', 'grade', 'post_time', 'surface', 'distance', 'going_turf', 'going_dirt', 'weather')} |
                          {'going': d.get('going_turf') if d.get('surface') == '芝' else (d.get('going_dirt') or d.get('going_turf')),
                           'turn': '直線' if '直線' in (d.get('course_detail') or '') else ('左' if '左' in (d.get('course_detail') or '') else ('右' if '右' in (d.get('course_detail') or '') else None)),
@@ -377,6 +379,47 @@ try:
                                        'score': x['ps_idx'], 'p_place': None, 'p_win': None, 'fair': None, 'ev': None,
                                        'runs': len(x.get('past') or []), 'cancel': False} for x in d['runners']]})
     races.sort(key=lambda r: (r['place_name'], r['rno']))
+    # 中央版 HORSE指数（2026-11-21 検証：テスト2026年で3着以内AUC 0.781・暫定指数0.642・市場0.820。全月で暫定より上）
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('jm', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jra_model.py'))
+        JM = importlib.util.module_from_spec(spec); spec.loader.exec_module(JM)
+        histj = [r for r in JM.load() if r['date'] < cday]
+        todayj = []
+        for rr in races:
+            d = cards.get(rr['id'])
+            if not d or d.get('surface') not in ('芝', 'ダ'):
+                continue
+            x = {'id': rr['id'], 'date': cday, 'place_code': d['place'], 'place': d['place'] + d['surface'], 'surface': d['surface'],
+                 'distance': d.get('distance'), 'going': rr.get('going'), 'grade': d.get('grade'), 'cls': d.get('cls'), 'rno': d['rno'],
+                 'post_time': d.get('post_time'), 'race_name': d.get('race_name') or ''}
+            c = JM.jclass(x); x['race_name'] = f'CLS:{c}' if c is not None else ''
+            x['runners'] = [{'num': h['num'], 'waku': h.get('waku'), 'horse_id': h.get('horse_id'), 'jockey': h.get('jockey'), 'trainer': h.get('trainer'),
+                             'kg': h.get('kg'), 'sexage': (h.get('sexage') or '').split('/')[0], 'hw': None, 'pos': None, 'pos_text': ''} for h in d['runners']]
+            todayj.append(x)
+        if todayj:
+            dfj, basej, withj = JM.frame(histj + todayj, cday)
+            past = dfj[(dfj.date < cday) & (dfj.field >= 5)]
+            vcut = sorted(past.date.unique())[-int(len(past.date.unique()) * 0.15)]
+            trj, vaj = past[past.date < vcut], past[past.date >= vcut]
+            mj = lgb.train(JM.PARAMS, lgb.Dataset(trj[withj], trj['top3']), 3000, valid_sets=[lgb.Dataset(vaj[withj], vaj['top3'])], callbacks=[lgb.early_stopping(100, verbose=False)])
+            lg = lambda p: np.log(np.clip(p, 1e-4, .9999) / (1 - np.clip(p, 1e-4, .9999)))
+            ref = lg(mj.predict(trj[withj].sample(min(40000, len(trj)), random_state=1), num_iteration=mj.best_iteration))
+            tdj = dfj[dfj.date == cday].copy()
+            pj = mj.predict(tdj[withj], num_iteration=mj.best_iteration)
+            tdj['sc'] = 50 + 10 * (lg(pj) - ref.mean()) / ref.std(); tdj['pp'] = pj
+            S = {(a, int(b)): (v, q) for a, b, v, q in zip(tdj.race, tdj.num, tdj.sc, tdj.pp)}
+            nj = 0
+            for rr in races:
+                for h in rr['runners']:
+                    v = S.get((rr['id'], h['num']))
+                    h['score'] = round(float(v[0]), 1) if v else None
+                    h['p_place'] = round(float(v[1]), 3) if v else None
+                    nj += v is not None
+            out['notes']['chuo'] = (f'HORSE指数（中央版・オッズ不使用・騎手の成績入り）。テスト期間2026年で3着以内AUC0.781（今までの暫定指数0.642、市場0.820）。'
+                                    f'回収率では市場を上回っていないので推奨買い目は出さない。{nj}頭に指数')
+    except Exception as e:  # noqa
+        out['notes']['chuo_error'] = 'HORSE指数（中央）を作れず：' + str(e)[:150].replace('<', '').replace('>', '')
     # 外部指数（中央）：競馬ナビの JRA 全レースAI予想（前日から公開。過去日は 403 なので毎回 knavidata/jra に貯めて後で検証する）
     try:
         from keiba import ext

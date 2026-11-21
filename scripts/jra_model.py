@@ -60,20 +60,25 @@ def load(d='jradata/races'):
 NF.class_level = lambda s: int(s.split(':')[1]) if s and s.startswith('CLS:') else None
 
 
+def jkey(h):
+    """騎手の名前（減量記号▲△☆◇★と空白を除く。出馬表に騎手IDが無いので名前で合わせる）"""
+    return re.sub(r'[▲△☆◇★\s　]', '', h.get('jockey') or '') or None
+
+
 def jockey_feats(races):
     """騎手の成績（それより前のレースだけ）。全体・同じ場芝ダ。縮小推定"""
     J = collections.defaultdict(lambda: [0, 0, 0]); JV = collections.defaultdict(lambda: [0, 0, 0])
     out = {}
     for r in races:
         for h in r['runners']:
-            k = h.get('jockey_id') or h.get('jockey')
+            k = jkey(h)
             a, b = J[k], JV[(k, r['place'])]
             out[(r['id'], h.get('num'))] = {'jk_top3': (a[2] + 0.25 * 30) / (a[0] + 30), 'jk_win': (a[1] + 0.08 * 30) / (a[0] + 30), 'jk_runs': a[0],
                                            'jkv_top3': (b[2] + 0.25 * 20) / (b[0] + 20)}
         for h in r['runners']:
-            if h.get('pos_text') == '取':
+            if h.get('pos_text') == '取' or h.get('pos') is None and not h.get('pos_text'):
                 continue
-            k = h.get('jockey_id') or h.get('jockey')
+            k = jkey(h)
             for x in (J[k], JV[(k, r['place'])]):
                 x[0] += 1; x[1] += h.get('pos') == 1; x[2] += bool(h.get('pos')) and h['pos'] <= 3
     return out
