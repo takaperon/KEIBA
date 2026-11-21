@@ -12,11 +12,18 @@ def get(u):
 t = get('https://m-jockey.co.jp/keiba-navi/jra/ai'); open('/tmp/s/jra_ai.html', 'w').write(t)
 links = sorted(set(re.findall(r'href="([^"]*(?:ai-all-race|jra/ai)[^"]*)"', t)))
 open('/tmp/s/links.txt', 'w').write('\n'.join(links))
-cand = [l for l in links if 'ymd=' in l or 'race' in l][:3]
+cand = [l.replace('&#038;', '&') for l in links if 'ymd=' in l][:2]
 for i, l in enumerate(cand):
     open(f'/tmp/s/race{i}.html', 'w').write(get(urllib.parse.urljoin('https://m-jockey.co.jp/', l)))
 # 過去日は取れるか（地方では403だった）
-open('/tmp/s/past.html', 'w').write(get('https://m-jockey.co.jp/keiba-navi/jra/ai/ai-all-race-predictions/?ymd=20261115&venue=05&race_num=11'))
-open('/tmp/s/status.txt', 'w').write('\n'.join(st)); print('\n'.join(st)); print('\n'.join(links[:40]))
+open('/tmp/s/past.html', 'w').write(get('https://m-jockey.co.jp/keiba-navi/jra/ai/?ymd=20261115&venue=05&race_num=11'))
+open('/tmp/s/status.txt', 'w').write('\n'.join(st)); print('\n'.join(st))
+sys.path.insert(0, os.getcwd())
+from keiba import ext
+for i in range(2):
+    try:
+        print('knavi_race', i, ext.knavi_race(open(f'/tmp/s/race{i}.html').read()))
+    except Exception as e:
+        print('parse ERR', e)
 subprocess.run('tar -C /tmp/s -czf /tmp/sample.tgz .', shell=True, check=True)
 subprocess.run(f'bash scripts/seal.sh /tmp/sample.tgz {sys.argv[1]}.sealed', shell=True, check=True)
