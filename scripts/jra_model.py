@@ -134,6 +134,8 @@ def frame(races, until):
     vf, LVL, _ = VL.build(races, std, until, anchor='05芝')
     vt = base + VL.attach(df, races, vf)
     frame.LVL = LVL
+    KN = [g for g in KEEP if g not in ('G5_馬場適性', 'G6_枠順', 'G7_展開')]
+    frame.nar_same = ['field'] + sorted({c for g in KN for c in NF.GROUPS[g] + [x + '_z' for x in NF.GROUPS[g] if x in REL] if c != 'field'})
     return df, vt, withj, base
 
 
@@ -160,7 +162,7 @@ if __name__ == '__main__':
         x = te[te[col].notna()]
         P(f'  {nm:<20} {roc_auc_score(x.top3, x[col]):.3f}{"":<12} {roc_auc_score(x.win, x[col]):.3f}  （n={len(x)}）')
     preds = {}
-    for cols, nm in ((base0, 'HORSE（場の差なし）'), (base, 'HORSE＋場の差(VT)')):
+    for cols, nm in ((frame.nar_same, 'HORSE（地方と同じ要素）'), (base0, 'HORSE（場の差なし）'), (base, 'HORSE＋場の差(VT)')):
         o = []
         for y in ('top3', 'win'):
             m = fit(cols, y); p = np.clip(m.predict(te[cols], num_iteration=m.best_iteration), 1e-6, 1 - 1e-6)
