@@ -264,3 +264,54 @@ for key, lab, grp in (('sd_fb_s', '当日の前のレース', 'sty3'), ('pd_fb',
     for nm, g in (('前残り/内枠が強い日（下位20%）', y[y[key] <= q[0]]), ('差し/外枠が強い日（上位20%）', y[y[key] >= q[1]])):
         s = '  '.join(f'{k}：実際{gg.top3.mean():.1%} 予想{gg["p_今のHORSE"].mean():.1%}' for k, gg in g.groupby(grp, observed=True))
         P(f'  {lab}・{nm}  {s}')
+
+# ---------- BI-6 中央：開幕週（前の開催から間があいた初日・2日目）は前残り・内枠か ----------
+if MODE == 'jra':
+    P('\n[BI-6] 中央の開幕週（その場で4週間以上あいてからの開催の1〜2日目）の傾向。全期間。±は標準誤差')
+    ds = collections.defaultdict(set)
+    for r in races:
+        ds[r['place_code']].add(r['date'])
+    start = {}
+    for r in races:
+        if r.get('day') == 1:
+            start[(r['place_code'], r['date'][:4], r.get('kai'))] = r['date']
+    def gap(r):
+        s = start.get((r['place_code'], r['date'][:4], r.get('kai')))
+        if not s:
+            return None
+        prev = [d for d in ds[r['place_code']] if d < s]
+        return (_d(s) - _d(max(prev))).days if prev else None
+    G = {}
+    for r in races:
+        g = gap(r); dy = r.get('day') or 0
+        if g is None:
+            G[r['id']] = None
+        elif g >= 28:
+            G[r['id']] = '開幕週(1-2日)' if dy <= 2 else '開幕2週目(3-4日)' if dy <= 4 else '5日〜'
+        else:
+            G[r['id']] = '続けての開催(1-2日)' if dy <= 2 else '続けての開催(3日〜)'
+    for sf in ('芝', 'ダ'):
+        A = collections.defaultdict(list)
+        for r in races:
+            if r['id'] in B and G.get(r['id']) and r['surface'] == sf:
+                A[G[r['id']]].append(B[r['id']])
+        for k in ('開幕週(1-2日)', '開幕2週目(3-4日)', '5日〜', '続けての開催(1-2日)', '続けての開催(3日〜)'):
+            a = np.array(A.get(k, []))
+            if len(a) >= 30:
+                P(f'  {sf} {k:<14} n={len(a):>4}  fb {a[:, 0].mean():+.3f}±{a[:, 0].std() / np.sqrt(len(a)):.3f}  ib {a[:, 1].mean():+.3f}±{a[:, 1].std() / np.sqrt(len(a)):.3f}')
+    # 場ごと（芝・開幕週 vs その他）
+    P('  場ごとの芝（開幕週 vs それ以外）')
+    for pc in sorted({r['place_code'] for r in races}):
+        a = np.array([B[r['id']] for r in races if r['place_code'] == pc and r['surface'] == '芝' and r['id'] in B and G.get(r['id']) == '開幕週(1-2日)'])
+        b = np.array([B[r['id']] for r in races if r['place_code'] == pc and r['surface'] == '芝' and r['id'] in B and G.get(r['id']) and G[r['id']] != '開幕週(1-2日)'])
+        if len(a) >= 15 and len(b) >= 30:
+            P(f'  {NAME.get(pc + "芝", pc)} 開幕週 n={len(a):>3} fb {a[:, 0].mean():+.3f} ib {a[:, 1].mean():+.3f}  ／ それ以外 n={len(b):>3} fb {b[:, 0].mean():+.3f} ib {b[:, 1].mean():+.3f}')
+    # 指数とのずれ（テスト期間）
+    te['op'] = [G.get(x) for x in te.race]; te['sf'] = [RD[x]['surface'] for x in te.race]
+    P('  テスト期間・芝：開幕週かどうかで、脚質・枠ごとの3着内率（実際／今のHORSEの予想）')
+    for k in ('開幕週(1-2日)', '5日〜', '続けての開催(3日〜)'):
+        y = te[(te.op == k) & (te.sf == '芝')]
+        if len(y) > 300:
+            s1 = '  '.join(f'{a}：{g.top3.mean():.1%}/{g["p_今のHORSE"].mean():.1%}' for a, g in y.groupby('sty3', observed=True))
+            s2 = '  '.join(f'{a}：{g.top3.mean():.1%}/{g["p_今のHORSE"].mean():.1%}' for a, g in y.groupby('gate3', observed=True))
+            P(f'  {k} n={len(y)}  脚質 {s1}  ｜ 枠 {s2}')
