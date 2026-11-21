@@ -45,6 +45,11 @@ jobs:
           restore-keys: ext-data-
       - uses: actions/cache/restore@v4
         with:
+          path: knavidata
+          key: knavi-data-none
+          restore-keys: knavi-data-
+      - uses: actions/cache/restore@v4
+        with:
           path: peddata
           key: ped-data-none
           restore-keys: ped-data-
@@ -53,6 +58,11 @@ jobs:
         with: { python-version: '3.12' }
       - run: pip install -q numpy pandas scikit-learn lightgbm beautifulsoup4 lxml cryptography
       - run: python3 scripts/app_data.py nardata
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: knavidata
+          key: knavi-data-${{ github.run_id }}-${{ github.run_attempt }}
       - run: python3 scripts/build_ped_data.py || echo "血統データ作成に失敗"
       - name: seal and push
         run: |

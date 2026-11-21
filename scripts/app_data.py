@@ -377,6 +377,35 @@ try:
                                        'score': x['ps_idx'], 'p_place': None, 'p_win': None, 'fair': None, 'ev': None,
                                        'runs': len(x.get('past') or []), 'cancel': False} for x in d['runners']]})
     races.sort(key=lambda r: (r['place_name'], r['rno']))
+    # 外部指数（中央）：競馬ナビの JRA 全レースAI予想（前日から公開。過去日は 403 なので毎回 knavidata/jra に貯めて後で検証する）
+    try:
+        from keiba import ext
+        kn_n = 0
+        os.makedirs('knavidata/jra', exist_ok=True)
+        rec = []
+        for rr in races:
+            u = f"https://m-jockey.co.jp/keiba-navi/jra/ai/?ymd={cday}&venue={rr['id'][:2]}&race_num={rr['rno']:02d}"
+            try:
+                v = ext.knavi_race(get(u).decode('utf-8', 'replace'))
+            except Exception as e:  # noqa
+                print('knavi jra ERR', u, e); v = {}
+            if not v:
+                continue
+            kn_n += 1
+            rec.append({'date': cday, 'place': rr['id'][:2], 'rno': rr['rno'], 'idx': v})
+            xs = list(v.values()); m = sum(xs) / len(xs); sd = (sum((x - m) ** 2 for x in xs) / len(xs)) ** .5 or 1
+            for h in rr['runners']:
+                if h['num'] in v:
+                    h['ext_knavi'] = v[h['num']]
+                    h['ext'] = round(50 + 10 * (v[h['num']] - m) / sd, 1)
+            rr['has_ext'] = True
+        if rec:
+            with open(f'knavidata/jra/{cday}.jsonl', 'w') as f:
+                for x in rec:
+                    f.write(json.dumps(x, ensure_ascii=False) + '\n')
+        out['notes']['chuo_ext'] = f'外部指数：競馬ナビ {kn_n}/{len(races)}R（中央はまだ1サイトだけ・効き目は未検証。過去分が取れないので今日から貯めて検証する）'
+    except Exception as e:  # noqa
+        out['notes']['chuo_ext'] = '外部指数を取得できず：' + str(e)[:100].replace('<', '').replace('>', '')
     # 血統の狙い目印（中央）：2026-11-20 検証で ◎ は同じ人気帯の無印より3着内率 +0.6〜+7.6pt・複回90%、○ はほぼ差なし → ◎ だけ出す
     try:
         from keiba import ped_mark as PMK
