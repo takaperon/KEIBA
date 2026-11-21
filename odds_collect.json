@@ -1,0 +1,31 @@
+{
+ "by_day": {
+  "20261117": {
+   "snapshots": 162,
+   "races": 28
+  },
+  "20261118": {
+   "snapshots": 129,
+   "races": 18
+  },
+  "20261119": {
+   "snapshots": 178,
+   "races": 24
+  },
+  "20261120": {
+   "snapshots": 183,
+   "races": 25
+  },
+  "20261121": {
+   "snapshots": 130,
+   "races": 19
+  }
+ },
+ "last_run": {
+  "day": "20261121",
+  "races": 23,
+  "snapshots_this_run": 130,
+  "errors": 0,
+  "ended": "2026-11-21 18:56"
+ }
+}
