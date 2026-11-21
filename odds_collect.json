@@ -17,15 +17,15 @@
    "races": 25
   },
   "20261121": {
-   "snapshots": 130,
-   "races": 19
+   "snapshots": 184,
+   "races": 23
   }
  },
  "last_run": {
   "day": "20261121",
   "races": 23,
-  "snapshots_this_run": 130,
+  "snapshots_this_run": 54,
   "errors": 0,
-  "ended": "2026-11-21 18:56"
+  "ended": "2026-11-21 21:00"
  }
 }
