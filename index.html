@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KEIBA</title>
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0b0e14"><link rel="manifest" href="manifest.json">
+<style>
+:root{--bg:#0b0e14;--card:#141a24;--line:#232c3b;--tx:#e8ecf3;--mut:#8a96a8;--neo:#2ef2c8;--hot:#ff4d8d;--warn:#ffb020;--nar:#7c8cff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif}
+header{position:sticky;top:0;z-index:5;background:rgba(11,14,20,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 14px 8px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+h1{margin:0;font-size:19px;letter-spacing:.12em}
+.sw{display:flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px}
+.sw button{border:0;background:none;color:var(--mut);font-weight:800;padding:6px 16px;border-radius:999px;font-size:14px}
+.sw button.on.c{background:var(--neo);color:#04211b}.sw button.on.n{background:var(--nar);color:#0b0e2a}
+.sub{color:var(--mut);font-size:12px;margin-top:4px}
+.tabs{display:flex;gap:6px;margin-top:10px;overflow-x:auto}
+.tab{flex:0 0 auto;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--mut);font-weight:600}
+.tab.on{border-color:var(--ac);color:var(--ac)}
+.rn{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px}
+.rn::-webkit-scrollbar,.tabs::-webkit-scrollbar{display:none}
+.rn button{flex:0 0 auto;width:42px;padding:6px 0;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--tx);font-weight:700}
+.rn button.done{opacity:.4}.rn button.on{background:var(--ac);color:#04111b;border-color:var(--ac)}
+main{padding:12px 12px 40px}
+.warn{border:1px solid rgba(255,176,32,.4);background:rgba(255,176,32,.08);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:12.5px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+.rh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.rt{font-size:17px;font-weight:800}.meta{color:var(--mut);font-size:12.5px;margin-top:4px}
+.time{font-weight:700;color:var(--ac);white-space:nowrap}
+.verdict{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mut);font-size:12px;font-weight:700}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}.tw{overflow-x:auto;margin:0 -6px}
+th{color:var(--mut);font-weight:500;font-size:10.5px;text-align:left;padding:4px 2px;border-bottom:1px solid var(--line)}
+th.s{cursor:pointer;user-select:none}th.s.on{color:var(--ac);font-weight:800}th.s .ar{font-size:9px}
+td{padding:7px 2px;border-bottom:1px solid var(--line);vertical-align:middle}
+.w{display:inline-block;width:24px;height:24px;line-height:24px;border-radius:6px;font-weight:800;font-size:13px;text-align:center}
+.nm{font-weight:700;font-size:12.5px;line-height:1.25}.jk{color:var(--mut);font-size:10.5px}
+.r{text-align:right;white-space:nowrap}.pop{color:var(--mut);font-size:10.5px}
+.sc{font-weight:800}.s1{color:var(--ac)}
+tr.cx{opacity:.35}
+tr.mvA{background:linear-gradient(90deg,rgba(255,77,141,.28),transparent 85%)}tr.mvB{background:linear-gradient(90deg,rgba(255,176,32,.20),transparent 85%)}
+.mv{font-weight:800;font-size:11px}.mvA .mv{color:var(--hot)}.mvB .mv{color:var(--warn)}.up{color:#6fa8ff}.mvt{color:var(--hot)}
+.ps{display:inline-block;min-width:22px;padding:1px 5px;border-radius:6px;font-weight:800;font-size:12px;background:#2a3344;color:var(--tx);text-align:center}
+.ps.p1{background:#f4d03f;color:#111}.ps.p2{background:#cfd6e2;color:#111}.ps.p3{background:#d08a4a;color:#111}
+.pay{margin-top:10px;border-top:1px solid var(--line);padding-top:8px;font-size:12.5px}.pay div{display:flex;justify-content:space-between;padding:2px 0}.pay b{color:var(--mut);font-weight:600;width:56px}
+.leg{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--mut);margin-top:6px}.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.lg{color:var(--mut);font-size:11.5px;margin-top:8px}
+.ped{font-size:10.5px;color:#b9c3d6;margin-top:1px}.ped .ms{display:block;color:#93a0b8}
+.pmk{font-weight:900;font-size:15px;color:#9fd3ff;text-decoration:none}.pmk.p2{color:var(--ac)}
+.nk{font-size:10.5px;color:#cfe3ff;margin-top:2px}.nk b{color:var(--nar)}.nk.no{color:var(--warn)}
+.ix{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px;table-layout:fixed}.ix th{color:var(--mut);font-weight:600;font-size:10.5px;padding:5px 2px;border-bottom:1px solid var(--line);text-align:right;cursor:pointer}.ix th.l,.ix td.l{text-align:left}.ix th.on{color:var(--ac)}
+.ix td{padding:7px 2px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ix td.nm{font-weight:700;font-size:12.5px}.ix td.v{font-weight:800;font-size:14px}.ix td.v.r1{color:var(--ac)}.ix td.v.r2,.ix td.v.r3{color:#9fd3ff}
+.ix td.sep,.ix th.sep{border-left:1px solid var(--line)}.ix tr.cx{opacity:.35}.ix sup{font-size:9px;color:var(--mut);font-weight:600;margin-left:1px}
+.vw{display:flex;gap:6px;margin-top:8px}.vw button{flex:1;border:1px solid var(--line);background:#0f141d;color:var(--mut);border-radius:8px;padding:6px;font-size:12.5px;font-weight:700}.vw button.on{border-color:var(--ac);color:var(--ac)}
+.empty{color:var(--mut);text-align:center;padding:40px 0}
+@media (min-width:760px){header>*,main{max-width:1280px;margin-left:auto;margin-right:auto}main{padding:18px 16px 60px}
+  .hr{display:grid;grid-template-columns:1fr auto;column-gap:16px}.hr .l1{grid-column:1/3}.hr .l2,.hr .l3,.hr .mt,.hr .nk{grid-column:1/3}
+  .l1 .nm{font-size:17px}.od{font-size:18px}.rn button:hover,.tab:hover,.sb button:hover{border-color:var(--ac)}}
+.sb{display:flex;gap:6px;overflow-x:auto;margin:10px -2px 4px;padding:0 2px}.sb::-webkit-scrollbar{display:none}
+.sb button{flex:0 0 auto;border:1px solid var(--line);background:#0f141d;color:var(--mut);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700}
+.sb button.on{border-color:var(--ac);color:var(--ac)}
+.hr{border-top:1px solid var(--line);padding:9px 2px 8px}.hr.cx{opacity:.35}
+.hr.mvA{background:linear-gradient(90deg,rgba(255,77,141,.22),transparent 90%)}.hr.mvB{background:linear-gradient(90deg,rgba(255,176,32,.16),transparent 90%)}
+.l1{display:flex;align-items:center;gap:6px}.l1 .nm{font-size:15.5px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.od{font-size:16px;font-weight:800;white-space:nowrap}.od small{font-size:10.5px;color:var(--mut);font-weight:600;margin-left:3px}
+.l2{display:flex;justify-content:space-between;gap:8px;color:var(--mut);font-size:12px;margin-top:2px;padding-left:2px}
+.l3{font-size:12px;margin-top:3px;padding-left:2px;color:#b9c3d6}.l3 a{color:#cfd8ea;text-decoration:none;border-bottom:1px dotted #5d6a82}.l3 .x{margin-left:6px;font-size:11px;color:var(--ac);border:1px solid var(--line);border-radius:6px;padding:0 5px}
+.mt{display:grid;grid-template-columns:repeat(5,1fr);gap:2px 6px;font-size:11px;margin-top:5px;padding-left:2px;color:var(--mut)}.mt>span{display:flex;flex-direction:column;line-height:1.2}.mt b{margin:0;font-size:14px}.mt i{font-style:normal;font-size:10px}
+.pt2{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}.pt2 th{color:var(--mut);font-weight:600;font-size:11px;padding:6px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;cursor:pointer}.pt2 th.l{text-align:left}.pt2 th.on{color:var(--ac)}
+.pt2 td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;vertical-align:middle}.pt2 td.l{text-align:left}.pt2 .nm{font-size:14.5px;font-weight:700}.pt2 .sub{font-size:11px;color:var(--mut);font-weight:400}
+.pt2 td.k{font-weight:800;font-size:14px}.pt2 td.k.s1{color:var(--ac)}.pt2 tr.cx{opacity:.35}.pt2 tr.mvA{background:linear-gradient(90deg,rgba(255,77,141,.22),transparent 90%)}.pt2 tr.mvB{background:linear-gradient(90deg,rgba(255,176,32,.16),transparent 90%)}
+.pt2 td.sep{border-left:1px solid var(--line)}.pt2 a{color:#cfd8ea;text-decoration:none;border-bottom:1px dotted #5d6a82}.mt b{color:var(--tx);font-size:13px;margin-left:2px}.mt b.s1{color:var(--ac)}
+.hr .nk{font-size:11.5px;padding-left:2px}
+.pv input{width:100%;background:#0b0e14;color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:16px}
+.pv label{display:block;color:var(--mut);font-size:12px;margin:8px 0 3px}
+.pt{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}.pt td,.pt th{padding:5px 2px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}.pt td:first-child,.pt th:first-child{text-align:left}
+.pt tr.hl{background:rgba(124,140,255,.14)}.pt tr.few{color:var(--mut)}.pt th{font-size:10.5px}
+.ph{font-weight:800;margin:14px 0 2px;font-size:14px}
+.lv{color:var(--neo);font-size:11px}.dn{color:var(--hot)}.upx{color:#6fa8ff}
+</style></head><body>
+<header><div class="top"><h1>KEIBA</h1><button id="pb" onclick="openPed({})" style="margin-left:auto;margin-right:6px;border:1px solid var(--line);background:var(--card);color:var(--tx);border-radius:999px;padding:6px 10px;font-weight:800">血統</button><button id="nx" onclick="swDay()" style="display:none;white-space:nowrap;margin-right:6px;border:1px solid var(--line);background:var(--card);color:var(--tx);border-radius:999px;padding:6px 10px;font-weight:800"></button><button id="rf" onclick="refresh()" style="margin-right:8px;border:1px solid var(--line);background:var(--card);color:var(--tx);border-radius:999px;padding:6px 12px;font-weight:800">↻ 更新</button><div class="sw"><button id="bc" class="c" onclick="setM('chuo')">中央</button><button id="bn" class="n" onclick="setM('chiho')">地方</button></div></div>
+<div class="sub" id="sub"></div><div class="tabs" id="tabs"></div><div class="rn" id="rn"></div></header>
+<main id="main"></main>
+<script>
+let D={date:"",built_at:"",modes:{},notes:{}};let LIVE={};
+const WC=['','#f2f2f2','#222','#e0303b','#2f6fe0','#f4d03f','#2fae5a','#ff8c2e','#ff6fb1'];
+const WT=['','#111','#fff','#fff','#fff','#111','#fff','#111','#111'];
+let mode='chiho',place=null,rno=null,sk='num';
+const mvc=h=>h.mv10_2==null?'':(h.mv10_2<=-0.30?'mvA':(h.mv10_2<=-0.15?'mvB':''));
+const pct=v=>v==null?'':(v>0?'+':'')+Math.round(v*100)+'%';
+const SK={pm:h=>h.pm,s2:h=>h.score2,pp:h=>h.p_place,pos:h=>h.pos==null?null:-h.pos,mv:h=>h.mv10_2==null?null:-h.mv10_2,mv60:h=>h.mv60_2==null?null:-h.mv60_2,ext:h=>h.ext,num:h=>h.num,odds:h=>h.odds==null?null:-h.odds,mkt:h=>h.mkt_p,score:h=>h.score,pp:h=>h.p_place,fair:h=>h.fair,ev:h=>h.ev};
+function setS(k){sk=(sk===k?'num':k);render()}
+function sorted(rs){const f=SK[sk];return [...rs].sort((a,b)=>{if(sk==='num')return a.num-b.num;const x=f(a),y=f(b);if(x==null&&y==null)return a.num-b.num;if(x==null)return 1;if(y==null)return -1;return y-x||a.num-b.num})}
+const TH=(k,l,r)=>`<th class="s ${r?'r':''} ${sk===k?'on':''}" onclick="setS('${k}')">${l}${sk===k&&k!=='num'?'<span class=ar> ▼</span>':''}</th>`;
+const jst=()=>new Date(Date.now()+9*3600e3);
+const today=jst().toISOString().slice(0,10).replace(/-/g,'');
+const rdate=()=>mode==='chuo'&&D.chuo_date?D.chuo_date:D.date;const done=r=>today>rdate()||(today===rdate()&&(r.post_time||'99')<jst().toISOString().slice(11,16));
+const R=()=>D.modes[mode]||[];
+function setM(m){mode=m;if(typeof PQ!=='undefined')PQ.race=null;try{localStorage.setItem('km',m)}catch(e){};place=null;init();scrollTo(0,0)}
+function init(){
+  document.documentElement.style.setProperty('--ac',mode==='chuo'?'var(--neo)':'var(--nar)');
+  bc.classList.toggle('on',mode==='chuo');bn.classList.toggle('on',mode==='chiho');
+  sub.textContent=D.date?`${D.date.slice(0,4)}/${D.date.slice(4,6)}/${D.date.slice(6)}　データ作成 ${D.built_at.slice(11)}`+(LIVE.at?`　オッズ ${LIVE.at} 時点（${LIVE.race}）`:'（オッズはデータ作成時点）'):'';
+  const ps=[...new Set(R().map(r=>r.place_name))];
+  if(!ps.includes(place))place=ps[0];
+  const nx=R().find(r=>r.place_name===place&&!done(r));rno=nx?nx.rno:(R().find(r=>r.place_name===place)||{}).rno;
+  render();
+}
+let VIEW='race';
+function render(){
+  if(VIEW==='ped'){pedView();return}
+  const ps=[...new Set(R().map(r=>r.place_name))];
+  tabs.innerHTML=ps.map(p=>`<button class="tab ${p===place?'on':''}" onclick="VIEW='race';place='${p}';const nx=R().find(r=>r.place_name===place&&!done(r));rno=nx?nx.rno:1;render()">${p}</button>`).join('');
+  if(!ps.length){rn.innerHTML='';main.innerHTML=note()+`<div class="empty">${mode==='chuo'?'中央':'地方'}は今日の開催がありません</div>`;return}
+  rn.innerHTML=R().filter(r=>r.place_name===place).map(r=>`<button class="${r.rno===rno?'on':''} ${done(r)?'done':''}" onclick="rno=${r.rno};LIVE={};VIEW='race';render();scrollTo(0,0)">${r.rno}R</button>`).join('');
+  const r=R().find(x=>x.place_name===place&&x.rno===rno);
+  main.innerHTML=note()+(r?race(r):'');
+}
+const esc=t=>String(t??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function note(){const nx=D.next?'<b>翌日の出走表</b>（前日の夜に作ったもの。馬体重と当日のオッズはまだ無い。地方は単勝オッズも無し。当日の朝からは「今日」で見てください）<br>':'';const cd=mode==='chuo'&&D.chuo_date&&D.chuo_date!==D.date?`<b>出馬表は ${+D.chuo_date.slice(4,6)}/${+D.chuo_date.slice(6)}（${'日月火水木金土'[new Date(+D.chuo_date.slice(0,4),+D.chuo_date.slice(4,6)-1,+D.chuo_date.slice(6)).getDay()]}）の分</b>（オッズは発売が始まってから）<br>`:'';const n=cd+(D.notes[mode]||'')+(D.notes[mode+'_ext']?'<br>'+D.notes[mode+'_ext']:'')+(mode==='chiho'&&D.notes.chiho_noken?'<br>'+D.notes.chiho_noken:'')+(D.notes[mode+'_pm']?'<br>'+D.notes[mode+'_pm']:'');const e=D.notes[mode+'_error'];return `<div class="warn">${nx}${n}${e?'<br>取得エラー：'+esc(e):''}</div>`}
+const SORTS=[['num','馬番'],['odds','単勝'],['score','SCORE'],['s2','合成'],['pp','3着内'],['ev','EV'],['ext','外部'],['mv','10→2分売れ'],['mv60','1時間前比'],['pos','着順']];
+let MV=(()=>{try{return localStorage.getItem('kb_mv')||'card'}catch(e){return 'card'}})();
+function setMV(v){MV=v;try{localStorage.setItem('kb_mv',v)}catch(e){}render()}
+function rankOf(r,f){const v=r.runners.filter(h=>!h.cancel&&f(h)!=null).map(f).sort((a,b)=>b-a);return h=>{const x=f(h);return x==null||h.cancel?null:1+v.filter(y=>y>x).length}}
+function raceIdx(r){const isN=mode==='chiho',ext=!!r.has_ext;
+  const rs=rankOf(r,h=>h.score),re=rankOf(r,h=>h.ext),r2=rankOf(r,h=>h.score2);
+  const H=(k,l,c)=>`<th class="${c||''} ${sk===k?'on':''}" ${k?`onclick="setS('${k}')"`:''}>${l}${k&&sk===k&&k!=='num'?'▼':''}</th>`;
+  const cols=`<colgroup><col style="width:26px"><col><col style="width:54px">${ext?`<col style="width:54px">`:``}${ext&&isN?`<col style="width:54px">`:``}<col style="width:34px"><col style="width:42px"></colgroup>`;
+  const head=`<tr>${H('num','番','l')}<th class="l">馬名</th>${H('score','HORSE','sep')}${ext?H('ext','外部'):''}${ext&&isN?H('s2','合成'):''}${H('pm','血統')}${H('odds','単勝','sep')}</tr>`;
+  const v=(x,rk)=>`<td class="v ${rk&&rk<=3?'r'+rk:''}">${x??'-'}${rk?`<sup>${rk}</sup>`:''}</td>`;
+  const rows=sorted(r.runners).map(h=>{const a=rs(h),b=re(h);
+    return `<tr class="${h.cancel?'cx':''}"><td class="l"><span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'};min-width:20px;font-size:12px">${h.num}</span></td><td class="l nm">${h.pos!=null?`<span class="ps ${h.pos<=3?'p'+h.pos:''}" style="width:18px;height:18px;font-size:11px">${h.pos}</span> `:''}${esc(h.horse)}</td>
+    ${v(h.score,a).replace('<td class="v','<td class="sep v')}${ext?v(h.ext,b):''}${ext&&isN?v(h.score2,r2(h)):''}<td style="text-align:center">${pmCell(h,true)}</td><td class="sep">${h.final_tan??h.odds??'-'}</td></tr>`}).join('');
+  return `<table class="ix">${cols}${head}${rows}</table><div class="lg">数字の右上の小さい数字＝そのレースでの順位（1〜3位は色付き）。サイトごとの外部指数（水・か・ナ）は「1頭ずつ」かPCの表に出ます。HORSE＝オッズを使わない独自指数（SCORE）。外部＝水分ボンバー・かよちん・競馬ナビを各レース内の偏差値にして平均したもの。血統＝今回の条件（距離・馬場・競馬場）で父・母父の3着内率が全馬平均より高い：◎両方・○片方（押すと理由。60走以上で全馬平均の1.3倍以上の条件だけ。検証では同じ人気の無印より3着内率が1〜2ポイント高い程度）。合成＝HORSEの要素に外部指数（水分ボンバー・かよちん）を足して学習し直した指数（テストで3着以内の当たり具合がHORSEより上。外部指数がオッズを使っているかは不明）。</div>`}
+const WIDE=()=>innerWidth>=760;addEventListener('resize',()=>{if(VIEW==='race'&&D.date)render()});
+function raceTable(r){const isN=mode==='chiho';const fin=r.runners.some(h=>h.pos!=null);const mvs=isN&&r.has_moves;const ext=!!r.has_ext;
+  const H=(k,l,c)=>`<th class="${c||''} ${sk===k?'on':''}" onclick="setS('${k}')">${l}${sk===k&&k!=='num'?' ▼':''}</th>`;
+  const head=`<tr>${fin?H('pos','着','l'):''}${H('num','番','l')}<th class="l">馬名</th><th class="l">騎手</th>${H('odds','単勝')}<th>人気</th>${H('score','HORSE指数','sep')}${ext?H('ext','外部指数')+(isN?'<th>水</th><th>か</th>':'')+'<th>ナ</th>'+(isN?H('s2','合成','sep'):''):''}${isN?H('pp','3着内','sep')+H('ev','EV')+'<th>適正</th>':''}${mvs?H('mv','10→2分','sep')+H('mv60','1h前比'):''}${H('pm','血統','sep')}<th class="l sep">父 × 母父</th></tr>`;
+  const q=(h,o)=>`openPed(${JSON.stringify(Object.assign({race:rctx(r)},o)).replace(/"/g,'&quot;')})`;
+  const rows=sorted(r.runners).map(h=>`<tr class="${h.cancel?'cx':''} ${mvs?mvc(h):''}">${fin?`<td class="l">${h.pos!=null?`<span class="ps ${h.pos<=3?'p'+h.pos:''}">${h.pos}</span>`:`<span class="pop">${h.pos_text||''}</span>`}</td>`:''}
+    <td class="l"><span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'}">${h.num}</span></td>
+    <td class="l"><span class="nm">${esc(h.horse)}</span> <span class="sub">${h.sexage||''} ${h.kg||''}${h.hw?` ${h.hw}(${h.hw_diff>0?'+':''}${h.hw_diff})`:''}${isN&&h.runs===0?' 初出':''}</span>${isN&&h.noken_need?nkLine(h,r):''}</td>
+    <td class="l">${esc(h.jockey||'')}</td>
+    <td class="k">${h.final_tan??h.odds??'-'}${h.prev_odds&&h.prev_odds!==h.odds?` <span class="lv ${h.odds<h.prev_odds?'dn':'upx'}">${h.odds<h.prev_odds?'↓':'↑'}${h.prev_odds}</span>`:''}</td><td>${h.pop??''}${h.mkt_p!=null?` <span class="sub">${Math.round(h.mkt_p*100)}%</span>`:''}</td>
+    <td class="k sep ${isTop(r,h)?'s1':''}">${h.score??'-'}</td>
+    ${ext?`<td class="k">${h.ext??'-'}</td>${isN?`<td>${h.ext_sbo??''}</td><td>${h.ext_kayo??''}</td>`:''}<td>${h.ext_knavi??''}</td>${isN?`<td class="k sep">${h.score2??'-'}</td>`:''}`:''}
+    ${isN?`<td class="sep">${h.p_place!=null?Math.round(h.p_place*100)+'%':'-'}</td><td>${h.ev??'-'}</td><td class="sub">${h.fair??''}</td>`:''}
+    ${mvs?`<td class="sep"><span class="mv ${h.mv10_2>0.15?'up':''}">${h.mv10_2!=null?pct(h.mv10_2):'-'}</span></td><td class="${h.mv60_2<=-0.3?'mvt':''}">${h.mv60_2!=null?pct(h.mv60_2):'-'}</td>`:''}
+    <td class="sep" style="text-align:center">${pmCell(h,true)}</td><td class="l sep">${h.sire||h.damsire?`<a href="javascript:void 0" onclick="${q(h,{s:h.sire})}">${esc(h.sire||'—')}</a> × <a href="javascript:void 0" onclick="${q(h,{m:h.damsire})}">${esc(h.damsire||'—')}</a> <a class="sub" href="javascript:void 0" onclick="${q(h,{s:h.sire,m:h.damsire})}">組合せ</a>`:''}</td></tr>`).join('');
+  return `<div style="overflow-x:auto"><table class="pt2">${head}${rows}</table></div>`}
+function race(r){
+  const isN=mode==='chiho';
+  const fin=r.runners.some(h=>h.pos!=null);const mvs=isN&&r.has_moves;
+  const sb=SORTS.filter(([k])=>(k!=='pos'||fin)&&(!['mv','mv60'].includes(k)||mvs)&&(k!=='ext'||r.has_ext)&&(k!=='s2'||(isN&&r.has_ext))&&(!['pp','ev'].includes(k)||isN))
+    .map(([k,l])=>`<button class="${sk===k?'on':''}" onclick="setS('${k}')">${l}${sk===k&&k!=='num'?' ▼':''}</button>`).join('');
+  const rows=sorted(r.runners).map(h=>{
+    const odds=h.final_tan??h.odds;
+    const live=h.prev_odds&&h.prev_odds!==h.odds?`<span class="lv ${h.odds<h.prev_odds?'dn':'upx'}">${h.odds<h.prev_odds?'↓':'↑'}${h.prev_odds}</span> `:'';
+    const mt=[];const sl=(l,v,cls,sub)=>`<i>${l}</i><b class="${cls||''}">${v??'-'}</b>${sub?`<i>${sub}</i>`:''}`;
+    mt.push(sl('SCORE',h.score,isTop(r,h)?'s1':''));
+    if(r.has_ext)mt.push(sl('外部指数',h.ext,'',`${h.ext_sbo!=null?'水'+h.ext_sbo:''}${h.ext_kayo!=null?' か'+h.ext_kayo:''}${h.ext_knavi!=null?' ナ'+h.ext_knavi:''}`));
+    if(isN&&r.has_ext)mt.push(sl('合成',h.score2));
+    if(isN||h.p_place!=null)mt.push(sl('3着内',h.p_place!=null?Math.round(h.p_place*100)+'%':null));
+    if(isN)mt.push(sl('EV',h.ev,'',h.fair?'適正'+h.fair:''));
+    if(mvs&&h.mv10_2!=null)mt.push(sl('10→2分',pct(h.mv10_2),'mv '+(h.mv10_2>0.15?'up':''),h.mv60_2!=null?'1h前比'+pct(h.mv60_2):''));
+    const posb=fin?(h.pos!=null?`<span class="ps ${h.pos<=3?'p'+h.pos:''}">${h.pos}</span>`:`<span class="pop">${h.pos_text||''}</span>`):'';
+    return `<div class="hr ${h.cancel?'cx':''} ${mvs?mvc(h):''}">
+      <div class="l1">${posb}<span class="w" style="background:${WC[h.waku]||'#444'};color:${WT[h.waku]||'#fff'}">${h.num}</span><span class="nm">${esc(h.horse)}</span><span class="od">${live}${odds??'-'}<small>${h.pop?h.pop+'人気':''}</small></span></div>
+      <div class="l2"><span>${esc(h.jockey||'')}　${h.sexage||''}　${h.kg||''}${h.hw?`　${h.hw}(${h.hw_diff>0?'+':''}${h.hw_diff})`:''}${isN&&h.runs===0?'　初出':''}</span><span>${h.mkt_p!=null?'市場'+Math.round(h.mkt_p*100)+'%':''}</span></div>
+      ${pedLine(h,r)}
+      ${mt.length?`<div class="mt">${mt.map(x=>`<span>${x}</span>`).join('')}</div>`:''}
+      ${isN&&h.noken_need?nkLine(h,r):''}</div>`}).join('');
+  return `<div class="card"><div class="rh"><div class="rt">${r.place_name}${r.rno}R ${esc(r.race_name||'')}</div><div class="time">${r.post_time||''}</div></div>
+  <div class="meta">${r.surface||''}${r.turn&&r.turn!=='不明'?r.turn:''}${r.distance||''}m　${r.weather||''} ${r.going||''}${done(r)?'　<b>発走済み</b>':''}</div>
+  <span class="verdict">判定：${r.verdict}</span>
+  ${WIDE()?raceTable(r):`<div class="vw"><button class="${MV==='card'?'on':''}" onclick="setMV('card')">1頭ずつ</button><button class="${MV==='idx'?'on':''}" onclick="setMV('idx')">指数を横に比べる</button></div>${MV==='idx'?raceIdx(r):`<div class="sb">${sb}</div>${rows}`}`}
+  ${isN?nkTable(r):''}
+  ${r.payouts&&Object.keys(r.payouts).length?`<div class="pay">${Object.entries(r.payouts).map(([k,v])=>`<div><b>${k}</b><span>${v.map(x=>x.combo+'　'+Number(x.yen).toLocaleString()+'円').join('<br>')}</span></div>`).join('')}</div>`:''}
+  ${mvs?`<div class="leg"><span><i style="background:var(--hot)"></i>10分前→2分前で単勝オッズ30%以上下落（急に売れた）</span><span><i style="background:var(--warn)"></i>15〜30%下落</span><span class="up">＋は売れなかった</span></div>`:''}
+  <div class="lg">${isN?'SCORE＝オッズを使わない能力指数（50が平均）。3着内＝3着以内に入る確率。適正＝1着確率から計算した単勝の理論オッズ。EV＝1着確率×実際の単勝オッズ（参考値）。父・母父を押すとその血統の条件別成績。':'HORSE指数（中央版）＝オッズを使わない独自指数（騎手の成績入り。2026年のテストで3着以内の当たり具合AUC0.781）。3着内＝3着以内に入る確率。父・母父を押すとその血統の条件別成績。'}</div></div>`;
+}
+function pedLine(h,r){if(h.sire==null&&h.damsire==null)return '';if(!h.sire&&!h.damsire)return '<div class="l3">血統の掲載なし</div>';
+  const q=(o)=>`openPed(${JSON.stringify(Object.assign({race:rctx(r)},o)).replace(/"/g,'&quot;')})`;
+  return `<div class="l3">父 <a href="javascript:void 0" onclick="${q({s:h.sire})}">${esc(h.sire||'—')}</a>　母父 <a href="javascript:void 0" onclick="${q({m:h.damsire})}">${esc(h.damsire||'—')}</a>${h.sire&&h.damsire?`<a class="x" href="javascript:void 0" onclick="${q({s:h.sire,m:h.damsire})}">父×母父</a>`:''}${h.pm?` <span style="margin-left:6px">血統${pmCell(h)}</span>`:''}</div>`}
+function pmCell(h,big){if(h.pm==null)return big?'<span class="sub">—</span>':'';const m=h.pm===2?'◎':h.pm===1?'○':'';if(!m)return big?'<span class="sub">－</span>':'';
+  return `<a href="javascript:void 0" class="pmk ${h.pm===2?'p2':''}" onclick="alert(${JSON.stringify((h.pm_why||[]).join('\n')).replace(/"/g,'&quot;')})">${m}</a>`}
+const md=d=>d?(+d.slice(4,6))+'/'+(+d.slice(6)):'';
+function nkOne(x){const rk=x.rank!=null?x.rank+'着':(x.rank_t!=null?'時計'+x.rank_t+'位':'');return `${md(x.date)}${x.venue||''} ${x.dist||'?'}m <b>${x.time||'時計なし'}</b> ${rk}${x.n_grp?'/'+x.n_grp+'頭':''} ${x.result||''}${x.kind&&x.kind!=='能力検査'&&x.kind!=='能力審査'?'（'+x.kind+'）':''}`}
+function nkLine(h,r){if(h.noken&&h.noken.length)return `<div class="nk">能検 ${nkOne(h.noken[0])}${h.noken.length>1?`<br><span class="pop">前回 ${h.noken.slice(1).map(nkOne).join('／')}</span>`:''}</div>`;
+  return `<div class="nk no">能検 ${r.noken_none?'取得できない場（'+r.noken_none+'）':'結果が見つからない（他地区で受けた・収録前の回・中央からの転入など）'}</div>`}
+function nkTable(r){const hs=r.runners.filter(h=>h.noken_need&&!h.cancel);if(!hs.length)return '';
+  const rows=hs.map(h=>({h,x:(h.noken||[])[0]})).sort((a,b)=>{const ax=a.x,bx=b.x;if(!ax&&!bx)return a.h.num-b.h.num;if(!ax)return 1;if(!bx)return -1;return (ax.dist||0)-(bx.dist||0)||(tsec(ax.time)??999)-(tsec(bx.time)??999)});
+  return `<div class="pay"><div style="display:block"><b style="width:auto">能検タイム（距離ごとに速い順）</b></div>${rows.map(({h,x})=>`<div><span>${h.num} ${h.horse}</span><span>${x?nkOne(x):(r.noken_none?'取得できない場':'見つからない')}</span></div>`).join('')}<div class="pop" style="display:block">出典：${r.noken_src?r.noken_src+'の主催者公式サイトの能力検査結果':'（この場は取得元なし）'}。距離・馬場・検査の種類が違う時計はそのまま比べられない。</div></div>`}
+function tsec(t){if(!t)return null;let m=t.match(/^(\d+)[.:,](\d{2})\.(\d)$/);if(m)return +m[1]*60+ +m[2]+ +m[3]/10;m=t.match(/^(\d{2})\.(\d)$/);return m?+m[1]+ +m[2]/10:null}
+function isTop(r,h){const m=Math.max(...r.runners.map(x=>x.score??-1e9));return h.score!=null&&h.score===m}
+
+// ---- 血統成績（父・母父・父×母父 の条件別成績） ----
+const PD={};let PQ={s:'',m:'',race:null};
+function rctx(r){return {place:r.place_name,surface:r.surface,distance:r.distance,turn:r.turn||null,going:r.going||null,label:`${r.place_name}${r.rno}R ${r.surface||''}${r.distance||''}m`}}
+async function decryptBytes(o){const raw=b2u(keyRaw());
+  const pk=await crypto.subtle.importKey('pkcs8',raw,{name:'RSA-OAEP',hash:'SHA-256'},false,['decrypt']);
+  const k=await crypto.subtle.decrypt({name:'RSA-OAEP'},pk,b2u(o.k));
+  const ak=await crypto.subtle.importKey('raw',k,'AES-GCM',false,['decrypt']);
+  return await crypto.subtle.decrypt({name:'AES-GCM',iv:b2u(o.iv)},ak,b2u(o.d))}
+async function loadPed(m){if(PD[m])return PD[m];
+  const r=await fetch(`ped_${m}.json?`+(D.built_at||''));if(!r.ok)throw new Error('血統データがまだありません');
+  const buf=await decryptBytes(await r.json());
+  if(typeof DecompressionStream==='undefined')throw new Error('この端末のブラウザでは展開できません（iOS 16.4 以降が必要）');
+  const txt=await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  const d=JSON.parse(txt);d.si=new Map(d.sires.map((x,i)=>[nz(x),i]));d.mi=new Map(d.damsires.map((x,i)=>[nz(x),i]));return PD[m]=d}
+const nz=t=>String(t||'').normalize('NFKC').replace(/\s+/g,'');
+function openPed(o){PQ={s:o.s||'',m:o.m||'',race:o.race||null};VIEW='ped';rn.innerHTML='';tabs.innerHTML='';pedView();scrollTo(0,0)}
+function pedView(){
+  const ctx=PQ.race;
+  main.innerHTML=`<div class="card pv"><div class="rt">血統の条件別成績（${mode==='chuo'?'中央':'地方'}）</div>
+  <div class="meta">父だけ・母父だけ・両方（父×母父）で調べられます。中央／地方は上の切り替えに合わせます。</div>
+  <label>父（種牡馬）</label><input id="qs" list="dls" value="${esc(PQ.s)}" placeholder="例：ドゥラメンテ" autocomplete="off">
+  <label>母父</label><input id="qm" list="dlm" value="${esc(PQ.m)}" placeholder="例：キングカメハメハ" autocomplete="off">
+  <datalist id="dls"></datalist><datalist id="dlm"></datalist>
+  <button onclick="PQ.s=qs.value.trim();PQ.m=qm.value.trim();pedRun()" style="margin-top:10px;width:100%;padding:10px;border:0;border-radius:10px;background:var(--ac);color:#04111b;font-weight:800">調べる</button>
+  ${ctx?`<div class="meta" style="margin-top:6px">出走表から：${esc(ctx.label)} の条件に当たる行を色付け　<a href="javascript:void 0" onclick="VIEW='race';render()" style="color:var(--ac)">← 出走表に戻る</a></div>`:`<div class="meta" style="margin-top:6px"><a href="javascript:void 0" onclick="VIEW='race';render()" style="color:var(--ac)">← 出走表に戻る</a></div>`}
+  <div id="pres" style="margin-top:6px"></div></div>`;
+  pedRun()}
+function bump(o,k,p,w,q){const x=o[k]||(o[k]={n:0,a:0,b:0,c:0,w:0,q:0});x.n++;if(p===1)x.a++;if(p&&p<=2)x.b++;if(p&&p<=3)x.c++;x.w+=w*10;x.q+=q*10}
+async function pedRun(){const el=document.getElementById('pres');if(!el)return;
+  let d;try{el.innerHTML='<div class="meta">読み込み中…</div>';d=await loadPed(mode)}catch(e){el.innerHTML=`<div class="warn">${esc(e.message)}</div>`;return}
+  const fill=(id,arr,q)=>{const n=nz(q);const c=arr.filter(x=>!n||nz(x).includes(n)).slice(0,40);document.getElementById(id).innerHTML=c.map(x=>`<option value="${esc(x)}">`).join('')};
+  fill('dls',d.sires,PQ.s);fill('dlm',d.damsires,PQ.m);
+  if(!PQ.s&&!PQ.m){el.innerHTML=`<div class="meta">収録：${d.from?d.from.slice(0,4)+'/'+d.from.slice(4,6):''}〜${d.to?d.to.slice(0,4)+'/'+d.to.slice(4,6):''}・${d.runs_with_ped.toLocaleString()}走（血統が分かった分。全${d.runs_all.toLocaleString()}走）</div>`;return}
+  const si=PQ.s?d.si.get(nz(PQ.s)):null, mi=PQ.m?d.mi.get(nz(PQ.m)):null;
+  if(PQ.s&&si==null||PQ.m&&mi==null){el.innerHTML=`<div class="warn">${PQ.s&&si==null?'父「'+esc(PQ.s)+'」':''}${PQ.m&&mi==null?' 母父「'+esc(PQ.m)+'」':''} の産駒は収録期間の${mode==='chuo'?'中央':'地方'}に見つかりません（名前は候補から選ぶと確実です）</div>`;return}
+  const C=d.cols,N=C.s.length,G={all:{},b:{},f:{},g:{},t:{},v:{}};
+  const GN=['良','稍重','重','不良','—'],FN=['芝','ダート','障害'],TN=['右回り','左回り','直線','回り不明'];
+  for(let i=0;i<N;i++){if(si!=null&&C.s[i]!==si)continue;if(mi!=null&&C.m[i]!==mi)continue;
+    const p=C.p[i],w=C.w[i],q=C.q[i];bump(G.all,'計',p,w,q);bump(G.b,(C.f[i]===0?'芝':C.f[i]===1?'ダ':'障')+' '+d.bands[C.b[i]],p,w,q);bump(G.f,FN[C.f[i]],p,w,q);
+    bump(G.g,(C.f[i]===0?'芝':C.f[i]===1?'ダ':'障')+'・'+GN[C.g[i]],p,w,q);bump(G.t,TN[C.t[i]],p,w,q);bump(G.v,d.places[C.v[i]],p,w,q)}
+  const ctx=PQ.race;const cs=ctx?(ctx.surface==='芝'?'芝':ctx.surface==='ダ'?'ダ':'障'):null;
+  const cb=ctx&&ctx.distance?d.bands[[1000,1300,1600,1900,2200,99999].findIndex(x=>ctx.distance<=x)]:null;
+  const cg=ctx&&ctx.going?({'良':'良','稍':'稍重','稍重':'稍重','重':'重','不':'不良','不良':'不良'})[ctx.going]:null;
+  const HL={b:cs&&cb?cs+' '+cb:null,f:cs?({'芝':'芝','ダ':'ダート','障':'障害'})[cs]:null,g:cs&&cg?cs+'・'+cg:null,t:ctx&&ctx.turn?ctx.turn+'回り':null,v:ctx?ctx.place:null};
+  const pc=(a,b)=>b?(a/b*100).toFixed(1)+'%':'-';const roi=(y,n)=>n?Math.round(y/(n*100)*100)+'%':'-';
+  const tb=(title,obj,key,order)=>{let ks=Object.keys(obj);if(order)ks.sort((a,b)=>order.indexOf(a)-order.indexOf(b));else ks.sort((a,b)=>obj[b].n-obj[a].n);
+    if(!ks.length)return '';return `<div class="ph">${title}</div><table class="pt"><tr><th>条件／着別</th><th>走</th><th>勝率</th><th>複勝率</th><th>単回</th><th>複回</th></tr>${ks.map(k=>{const x=obj[k];
+      return `<tr class="${HL[key]===k?'hl':''} ${x.n<20?'few':''}"><td>${esc(k)}<div class="pop">${x.a}-${x.b-x.a}-${x.c-x.b}-${x.n-x.c}</div></td><td>${x.n}</td><td>${pc(x.a,x.n)}</td><td>${pc(x.c,x.n)}</td><td>${roi(x.w,x.n)}</td><td>${roi(x.q,x.n)}</td></tr>`}).join('')}</table>`};
+  const bo=[];for(const f of ['芝','ダ','障'])for(const b of d.bands)bo.push(f+' '+b);
+  const go=[];for(const f of ['芝','ダ','障'])for(const g of GN)go.push(f+'・'+g);
+  const ttl=PQ.s&&PQ.m?`父 ${esc(PQ.s)} × 母父 ${esc(PQ.m)}`:PQ.s?`父 ${esc(PQ.s)} の産駒`:`母父 ${esc(PQ.m)} の馬`;
+  if(!G.all['計']){el.innerHTML=`<div class="warn">${ttl}：収録期間に出走なし</div>`;return}
+  el.innerHTML=`<div class="rt" style="font-size:15px;margin-top:8px">${ttl}</div>`+tb('全体',G.all,'all')+tb('距離別',G.b,'b',bo)+tb('芝・ダート別',G.f,'f',['芝','ダート','障害'])+tb('馬場別',G.g,'g',go)+tb('回り別',G.t,'t',['右回り','左回り','直線','回り不明'])+tb('競馬場別',G.v,'v')+
+   `<div class="lg">収録 ${d.from?d.from.slice(0,4)+'/'+d.from.slice(4,6):''}〜${d.to?d.to.slice(0,4)+'/'+d.to.slice(4,6):''}（${mode==='chuo'?'中央':'地方'}・取消除外を除く）。灰色の行は20走未満で当てにならない。色付きの行は出走表から来たレースの条件。回収率は単勝・複勝を毎回100円買った場合。${mode==='chiho'?'地方の回り（右・左）は各場・距離の馬柱ページの表記から。':''}</div>`}
+
+// ---- 鍵（初回は #k=... のリンクで開くと保存される） ----
+const b2u=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+const u2b=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+let KEY=null;
+function keyRaw(){if(KEY)return KEY;
+  const h=(location.hash||'').match(/k=([A-Za-z0-9_\-]+)/);
+  if(h){KEY=h[1];try{localStorage.setItem('keiba_key',KEY)}catch(e){};try{history.replaceState(null,'',location.pathname)}catch(e){};return KEY}
+  try{KEY=localStorage.getItem('keiba_key')}catch(e){}
+  return KEY}
+function setKey(){const v=(document.getElementById('kin').value||'').trim();const m=v.match(/k=([A-Za-z0-9_\-]+)/)||v.match(/^([A-Za-z0-9_\-]{1000,})$/);
+  if(!m){alertBox('鍵が読み取れませんでした。リンク全体を貼り付けてください。');return}
+  KEY=m[1];try{localStorage.setItem('keiba_key',KEY)}catch(e){};location.reload()}
+function alertBox(t){const e=document.getElementById('kmsg');if(e)e.textContent=t}
+async function decryptData(o){const raw=b2u(keyRaw());
+  const pk=await crypto.subtle.importKey('pkcs8',raw,{name:'RSA-OAEP',hash:'SHA-256'},false,['decrypt']);
+  const k=await crypto.subtle.decrypt({name:'RSA-OAEP'},pk,b2u(o.k));
+  const ak=await crypto.subtle.importKey('raw',k,'AES-GCM',false,['decrypt']);
+  return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b2u(o.iv)},ak,b2u(o.d))))}
+async function sign(msg){const sk=await crypto.subtle.importKey('pkcs8',b2u(keyRaw()),{name:'RSA-PSS',hash:'SHA-256'},false,['sign']);
+  return u2b(await crypto.subtle.sign({name:'RSA-PSS',saltLength:32},sk,new TextEncoder().encode(msg)))}
+let DT=null,DN=null,DSEL='t';
+async function loadData(){const r=await fetch('data.json?'+Date.now(),{cache:'no-store'});DT=await decryptData(await r.json());DN=null;
+  try{const q=await fetch('data_next.json?'+Date.now(),{cache:'no-store'});if(q.ok){const x=await decryptData(await q.json());if(x.date>DT.date)DN=x}}catch(e){}
+  if(!DN)DSEL='t';D=DSEL==='n'?DN:DT;dayBtn()}
+const mdy=s=>`${+s.slice(4,6)}/${+s.slice(6)}`;
+function dayBtn(){const b=document.getElementById('nx');if(!DN){b.style.display='none';return}b.style.display='';
+  b.textContent=DSEL==='n'?`◀ 今日`:`明日 ${mdy(DN.date)}`}
+function swDay(){if(!DN)return;DSEL=DSEL==='n'?'t':'n';D=DSEL==='n'?DN:DT;LIVE={};place=null;dayBtn();
+  if(!(D.modes[mode]||[]).length&&(D.modes[mode==='chuo'?'chiho':'chuo']||[]).length)mode=mode==='chuo'?'chiho':'chuo';init();scrollTo(0,0)}
+async function liveOdds(r){if(!r||!r.id)return;const kind=mode==='chuo'?'jra':'nar';const ts=Math.floor(Date.now()/1000);
+  const sig=await sign(kind+'|'+r.id+'|'+ts);
+  const j=await (await fetch(`/api/odds?kind=${kind}&id=${r.id}&ts=${ts}&sig=${sig}`,{cache:'no-store'})).json();
+  if(j.error)throw new Error(j.error);
+  const tot=Object.values(j.odds).reduce((s,v)=>s+(v[0]?1/v[0]:0),0)||1;
+  for(const h of r.runners){const o=j.odds[h.num];if(!o||!o[0])continue;h.prev_odds=h.prev_odds??h.odds;h.odds=o[0];if(o[1])h.pop=o[1];h.mkt_p=1/o[0]/tot;if(h.p_win)h.ev=Math.round(h.p_win*o[0]*100)/100}
+  LIVE={at:j.at,race:`${r.place_name}${r.rno}R`}}
+async function refresh(){const btn=document.getElementById('rf');btn.textContent='更新中…';btn.disabled=true;
+  try{const cur={mode,place,rno};await loadData();mode=cur.mode;place=cur.place;rno=cur.rno;
+    const r=R().find(x=>x.place_name===place&&x.rno===rno);
+    if(r&&!done(r)){try{await liveOdds(r)}catch(e){LIVE={at:'取得できず（'+e.message+'）',race:''}}}
+    init();if(cur.place&&R().some(x=>x.place_name===cur.place)){place=cur.place;rno=cur.rno;render()}
+  }catch(e){main.innerHTML=`<div class="warn">データを開けませんでした（${e.message}）。鍵のリンクから一度開き直してください。</div>`}
+  btn.textContent='↻ 更新';btn.disabled=false}
+(async()=>{if(!keyRaw()){main.innerHTML=`<div class="card"><div class="rt">鍵の登録（最初の1回だけ）</div>
+  <div class="meta" style="margin:8px 0">チャットで渡した長いリンクを長押し→コピーして、下に貼り付けて「登録」を押してください。</div>
+  <textarea id="kin" style="width:100%;height:120px;background:#0b0e14;color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:8px;font-size:12px" placeholder="https://keiba-5db.pages.dev/#k=..."></textarea>
+  <button onclick="setKey()" style="margin-top:8px;width:100%;padding:10px;border:0;border-radius:10px;background:var(--neo);color:#04211b;font-weight:800">登録</button>
+  <div id="kmsg" class="meta" style="color:var(--hot);margin-top:6px"></div></div>`;return}
+  try{const m=localStorage.getItem('km');if(m)mode=m}catch(e){}
+  try{await loadData()}catch(e){main.innerHTML=`<div class="warn">データを開けませんでした（${e.message}）</div>`;return}
+  if(!(D.modes[mode]||[]).length&&(D.modes[mode==='chuo'?'chiho':'chuo']||[]).length)mode=mode==='chuo'?'chiho':'chuo';
+  init()})();
+</script></body></html>
