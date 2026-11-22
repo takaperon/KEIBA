@@ -422,6 +422,78 @@ try:
                     h['score'] = round(float(v[0]), 1) if v else None
                     h['p_place'] = round(float(v[1]), 3) if v else None
                     nj += v is not None
+            # 合成（中央）：HORSE＋デイリー うま屋のスピード指数（SP）と本紙の印（DY 2026-11-22：テスト2026年 3着以内AUC 0.773→0.788、11/11か月で良化）
+            try:
+                from keiba import daily
+                import gzip as _gz
+                from sklearn.linear_model import LogisticRegression
+                os.makedirs('dailydata', exist_ok=True)
+                DF_ = 'dailydata/races.jsonl.gz'
+                DYH = {}
+                if os.path.exists(DF_):
+                    with _gz.open(DF_, 'rt') as f:
+                        for l in f:
+                            x = json.loads(l); DYH[x['id']] = {int(k): v for k, v in x['rows'].items()}
+                nidm = {r['id']: f"{r['date'][:4]}{r['place_code']}{r['kai']:02d}{r['day']:02d}{r['rno']:02d}" for r in histj if r.get('kai') and r.get('day')}
+                new = []
+                for x in todayj:
+                    d = cards.get(x['id']) or {}
+                    if not (d.get('kai') and d.get('day')):
+                        continue
+                    rid = f"{cday[:4]}{d['place']}{d['kai']:02d}{d['day']:02d}{d['rno']:02d}"; nidm[x['id']] = rid
+                    if rid in DYH:  # 前の回（前日の夜など）に取った発走前のページを使う
+                        continue
+                    try:
+                        pg = daily.parse(get(daily.url(rid)).decode('utf-8', 'replace'))
+                    except Exception as e:  # noqa
+                        print('daily ERR', rid, e); continue
+                    if pg['rows']:
+                        DYH[rid] = {int(k): v for k, v in pg['rows'].items()}
+                        new.append({'id': rid, 'date': cday, 'page_date': pg['date'], 'rows': pg['rows']})
+                if new:  # 発走前のページを貯める（過去分の検証と同じ形。あとで同じ日を取り直さない）
+                    with _gz.open(DF_, 'at') as f:
+                        for x in new:
+                            f.write(json.dumps(x, ensure_ascii=False) + '\n')
+                MK = {'◎': 4, '○': 3, '▲': 2, '△': 1, '☆': 1, '注': 1}
+
+                def dyf(t, p):
+                    t = t.copy(); t['p'] = p
+                    t['sp'] = pd.to_numeric(pd.Series([((DYH.get(nidm.get(a)) or {}).get(int(b)) or {}).get('sp') for a, b in zip(t.race, t.num)], index=t.index), errors='coerce')
+                    t['mk'] = [((DYH.get(nidm.get(a)) or {}).get(int(b)) or {}).get('mark') or '' for a, b in zip(t.race, t.num)]
+                    t['has'] = [nidm.get(a) in DYH for a in t.race]
+                    g = t.groupby('race').sp
+                    t['sp_d'] = 50 + 10 * (t.sp - g.transform('mean')) / g.transform('std').replace(0, np.nan)
+                    t['sp_z'] = ((t.sp - g.transform('mean')) / g.transform('std').replace(0, np.nan)).fillna(-1.5); t['sp_na'] = t.sp.isna().astype(int)
+                    for k in (1, 2, 3, 4):
+                        t[f'mk{k}'] = [int(MK.get(m, 0) == k) for m in t.mk]
+                    t['lh'] = lg(t.p)
+                    return t
+                C2 = ['lh', 'sp_z', 'sp_na', 'mk1', 'mk2', 'mk3', 'mk4']
+                vv = dyf(vaj, mj.predict(vaj[basej], num_iteration=mj.best_iteration)); vv = vv[vv.has]
+                tt = dyf(tdj, pj)
+                if vv.race.nunique() >= 300 and tt.has.any():
+                    lr = LogisticRegression(C=1.0, max_iter=1000).fit(vv[C2], vv.top3)
+                    rl = lg(lr.predict_proba(vv[C2])[:, 1])
+                    tt['s2'] = np.where(tt.has, 50 + 10 * (lg(lr.predict_proba(tt[C2])[:, 1]) - rl.mean()) / rl.std(), np.nan)
+                    T2 = {(a, int(b)): (s2, spd, sp, mk, hs) for a, b, s2, spd, sp, mk, hs in zip(tt.race, tt.num, tt.s2, tt.sp_d, tt.sp, tt.mk, tt.has)}
+                    n2 = 0
+                    for rr in races:
+                        for h in rr['runners']:
+                            v = T2.get((rr['id'], h['num']))
+                            if not v or not v[4]:
+                                continue
+                            h['score2'] = round(float(v[0]), 1) if v[0] == v[0] else None
+                            h['ext'] = round(float(v[1]), 1) if v[1] == v[1] else None
+                            h['ext_sp'] = int(v[2]) if v[2] == v[2] else None
+                            h['ext_mk'] = v[3] or None
+                            n2 += h['score2'] is not None
+                        rr['has_ext'] = any(h.get('ext') is not None or h.get('ext_mk') for h in rr['runners'])
+                    out['notes']['chuo_ext'] = (f'外部指数（中央）＝デイリー うま屋のスピード指数（SP、レース内偏差値）と本紙の印。合成＝HORSE＋SP＋印（重みは直近{vv.race.nunique()}レースで決める）。'
+                                                f'検証：2026年で3着以内AUC HORSE0.773→合成0.788、11か月すべて良化。ただし合成1位の単勝回収は77%（HORSE1位82%）。{n2}頭に合成')
+                else:
+                    out['notes']['chuo_ext'] = f'外部指数（中央）：デイリーの過去分が足りず合成を作れず（{vv.race.nunique()}レース）'
+            except Exception as e:  # noqa
+                out['notes']['chuo_ext'] = '外部指数（中央）を作れず：' + str(e)[:120].replace('<', '').replace('>', '')
             out['notes']['chuo'] = (f'HORSE指数（中央版・オッズ不使用・騎手の成績は入れていない・地方と同じ作り）。テスト期間2026年で3着以内AUC0.773（今までの暫定指数0.642、市場0.820）。場のレベル差(VT)は中央では効かなかったので入れていない。'
                                     f'回収率では市場を上回っていないので推奨買い目は出さない。{nj}頭に指数')
     except Exception as e:  # noqa
@@ -448,7 +520,7 @@ try:
             with open(f'knavidata/jra/{cday}.jsonl', 'w') as f:
                 for x in rec:
                     f.write(json.dumps(x, ensure_ascii=False) + '\n')
-        out['notes']['chuo_ext'] = '外部指数：中央は表示しない（競馬ナビは11/21の検証で当てずっぽう以下だったため外した。記録だけ続け、デイリーのスピード指数を検証中）'
+        out['notes'].setdefault('chuo_ext', '外部指数（中央）：作れず')  # 競馬ナビ（中央）は11/21の検証で効かなかったので表示しない。記録だけ
     except Exception as e:  # noqa
         out['notes']['chuo_ext'] = '外部指数を取得できず：' + str(e)[:100].replace('<', '').replace('>', '')
     # 血統の狙い目印（中央）：2026-11-20 検証で ◎ は同じ人気帯の無印より3着内率 +0.6〜+7.6pt・複回90%、○ はほぼ差なし → ◎ だけ出す
