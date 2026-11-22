@@ -1,0 +1,33 @@
+name: ext_jra
+# 中央の外部指数（競馬ナビ）＋HORSE の前向き検証。毎週月曜の朝と手動。集計値だけを analysis へ
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '7 1 * * 1'
+permissions:
+  contents: write
+jobs:
+  v:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: git fetch -q origin data && mkdir -p jradata && git --work-tree=jradata checkout origin/data -- races && git reset -q
+      - uses: actions/cache/restore@v4
+        with:
+          path: knavidata
+          key: knavi-data-none
+          restore-keys: knavi-data-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q numpy pandas scikit-learn lightgbm
+      - run: set -o pipefail; python3 scripts/ext_jra.py 2>&1 | grep -v Warning | tee ext_jra.txt
+      - if: always()
+        run: |
+          mkdir -p an && cp ext_jra.txt an/ 2>/dev/null || true
+          git fetch -q origin analysis && for f in venue_time ext_compare pm_check pm_tune pm_jra jra_model bias_jra bias_nar; do git show origin/analysis:$f.txt > an/$f.txt 2>/dev/null || true; done
+          cd an && git init -q && git checkout -q -b analysis
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m a
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" analysis

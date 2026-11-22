@@ -438,7 +438,8 @@ try:
             if not v:
                 continue
             kn_n += 1
-            rec.append({'date': cday, 'place': rr['id'][:2], 'rno': rr['rno'], 'idx': v})
+            rec.append({'date': cday, 'place': rr['id'][:2], 'rno': rr['rno'], 'idx': v,
+                        'horse': {h['num']: h.get('score') for h in rr['runners'] if h.get('score') is not None}})  # 後でナビとHORSEを比べるため
             xs = list(v.values()); m = sum(xs) / len(xs); sd = (sum((x - m) ** 2 for x in xs) / len(xs)) ** .5 or 1
             for h in rr['runners']:
                 if h['num'] in v:
