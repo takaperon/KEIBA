@@ -14,7 +14,7 @@ sp_ = importlib.util.spec_from_file_location('jm', os.path.join(os.path.dirname(
 JM = importlib.util.module_from_spec(sp_); sp_.loader.exec_module(JM)
 P = print
 races = JM.load()
-nid = {r['id']: f"{r['date'][:4]}{r['place']}{r['kai']:02d}{r['day']:02d}{r['rno']:02d}" for r in races if r.get('kai') and r.get('day')}
+nid = {r['id']: f"{r['date'][:4]}{r['place_code']}{r['kai']:02d}{r['day']:02d}{r['rno']:02d}" for r in races if r.get('kai') and r.get('day')}
 DY = {}
 with gzip.open('dailydata/races.jsonl.gz', 'rt') as f:
     for l in f:
