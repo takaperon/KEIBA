@@ -3,6 +3,7 @@
 重みは検証期間（2025-08-16〜11-16）で選び、テスト期間（2025-11-17〜）で確かめる。
 あわせて、HORSE と合わせるモデル（合成）に、平均1本で入れるか、2サイト別々に入れるかを比べる。出力は集計値だけ。
 """
+import gzip, json, os, sys, collections
 import numpy as np, pandas as pd, lightgbm as lgb
 from sklearn.metrics import roc_auc_score, log_loss
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
