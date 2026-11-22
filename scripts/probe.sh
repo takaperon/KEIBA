@@ -1,13 +1,25 @@
 #!/bin/bash
-# N2: 過去レースのオッズページが残っているか（少数・3秒間隔）
+# 競馬ナビ（中央）のページが、指定した日付・場・レースのものかを確かめる（見出しと指数の表だけ書き出す）
 set -u
-out=$1; mkdir -p $out/f
-UA='Mozilla/5.0 (compatible; KEIBA-personal/0.1; +https://github.com/takaperon)'
-J=https://www.jra.go.jp
-p() { sleep 3; curl -sSL -A "$UA" -m 30 -o "$out/f/$1" -w "%{http_code} %{size_download} $2 $3\n" --data "cname=$3" "$J/JRADB/$2" >> $out/status.txt 2>>$out/err.txt; }
-p o2024.html accessO.html pw151ou1005202404011120241005Z/DE
-p o2026.html accessO.html pw151ou1008202605031120261114Z/F9
-p otoday.html accessO.html pw151ouS308202605041120261115Z/EF
-p horse.html accessU.html pw01dud002024101722/3A
-for f in $out/f/*.html; do iconv -f CP932 -t UTF-8 "$f" > "${f%.html}.u8.html" 2>/dev/null || cp "$f" "${f%.html}.u8.html"; grep -oE "pw[0-9A-Za-z]+/[0-9A-F]{2}" "$f" | sort -u > "${f%.html}.cnames.txt"; done
-exit 0
+O=$1; mkdir -p $O
+pip install -q beautifulsoup4 lxml >/dev/null 2>&1
+for q in "20261122&venue=08&race_num=11" "20261122&venue=05&race_num=11" "20261121&venue=08&race_num=01" "20261122&venue=08&race_num=01"; do
+  curl -s -A 'Mozilla/5.0 (compatible; KEIBA-personal/0.1)' "https://m-jockey.co.jp/keiba-navi/jra/ai/?ymd=$q" -o p.html -w "$q %{http_code}\n" >> $O/codes.txt
+  python3 - "$q" >> $O/knavi.txt <<'P'
+import sys, re
+from bs4 import BeautifulSoup
+s = BeautifulSoup(open('p.html', encoding='utf-8', errors='replace').read(), 'lxml')
+print('=====', sys.argv[1])
+t = s.get_text('\n', strip=True)
+for l in t.split('\n'):
+    if re.search(r'(20\d\d年|\d+月\d+日|\d+R|レース|ステークス|特別|未勝利|新馬|勝クラス)', l) and len(l) < 60:
+        print('  H:', l)
+for tb in s.find_all('table'):
+    h = tb.get_text(' ', strip=True)[:200]
+    if 'ナビ指数' in h and '馬番' in h:
+        for tr in tb.find_all('tr')[:20]:
+            print('  T:', ' | '.join(x.get_text(strip=True) for x in tr.find_all(['td', 'th'])))
+        break
+P
+  sleep 5
+done
