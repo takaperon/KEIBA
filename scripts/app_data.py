@@ -440,17 +440,12 @@ try:
             kn_n += 1
             rec.append({'date': cday, 'place': rr['id'][:2], 'rno': rr['rno'], 'idx': v,
                         'horse': {h['num']: h.get('score') for h in rr['runners'] if h.get('score') is not None}})  # 後でナビとHORSEを比べるため
-            xs = list(v.values()); m = sum(xs) / len(xs); sd = (sum((x - m) ** 2 for x in xs) / len(xs)) ** .5 or 1
-            for h in rr['runners']:
-                if h['num'] in v:
-                    h['ext_knavi'] = v[h['num']]
-                    h['ext'] = round(50 + 10 * (v[h['num']] - m) / sd, 1)
-            rr['has_ext'] = True
+            # 表示はしない（11/21 の検証で効かなかったため、2026-11-22 オーナー判断で外した）。記録だけ続ける
         if rec:
             with open(f'knavidata/jra/{cday}.jsonl', 'w') as f:
                 for x in rec:
                     f.write(json.dumps(x, ensure_ascii=False) + '\n')
-        out['notes']['chuo_ext'] = f'外部指数：競馬ナビ {kn_n}/{len(races)}R（中央はまだ1サイトだけ・効き目は未検証。過去分が取れないので今日から貯めて検証する）'
+        out['notes']['chuo_ext'] = '外部指数：中央は表示しない（競馬ナビは11/21の検証で当てずっぽう以下だったため外した。記録だけ続け、デイリーのスピード指数を検証中）'
     except Exception as e:  # noqa
         out['notes']['chuo_ext'] = '外部指数を取得できず：' + str(e)[:100].replace('<', '').replace('>', '')
     # 血統の狙い目印（中央）：2026-11-20 検証で ◎ は同じ人気帯の無印より3着内率 +0.6〜+7.6pt・複回90%、○ はほぼ差なし → ◎ だけ出す
