@@ -1,0 +1,37 @@
+name: ext_weight
+# HORSE指数と外部指数の比較。集計値だけを analysis ブランチへ
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/ext_weight.py', '.github/workflows/ext_weight.yml']
+permissions:
+  contents: write
+jobs:
+  v:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: nardata
+          key: nar-data-none
+          restore-keys: nar-data-
+      - uses: actions/cache/restore@v4
+        with:
+          path: extdata
+          key: ext-data-none
+          restore-keys: ext-data-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q numpy pandas scikit-learn lightgbm
+      - run: set -o pipefail; python3 scripts/ext_weight.py nardata extdata 2>&1 | grep -v Warning | tee ew.txt
+      - if: always()
+        run: |
+          mkdir -p an && cp ew.txt an/ext_weight.txt; git fetch -q origin analysis && for f in venue_time ext_compare pm_check pm_tune pm_jra jra_model bias_jra bias_nar ext_jra ext_daily knavi_nar; do git show origin/analysis:$f.txt > an/$f.txt 2>/dev/null || true; done
+          cd an && git init -q && git checkout -q -b analysis
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
+          git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m a
+          git push -f -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" analysis
