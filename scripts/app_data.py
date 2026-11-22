@@ -212,6 +212,8 @@ try:
                 return {}
             m = sum(xs) / len(xs); sd = (sum((x - m) ** 2 for x in xs) / len(xs)) ** .5 or 1
             return {k: 50 + 10 * (v - m) / sd for k, v in vals.items() if v is not None}
+        def wext(a, b):
+            return 0.2 * a + 0.8 * b if a is not None and b is not None else (b if b is not None else a)
         for rr in races:
             key = (rr['id'][4:6], int(rr['id'][10:12]))
             sb, ky, kn = sbo.get(key) or {}, kayo.get(key) or {}, knavi.get(rr['id']) or {}
@@ -219,17 +221,18 @@ try:
             devs = {k: dev(v) for k, v in raw.items()}
             for h in rr['runners']:
                 h['ext_sbo'] = raw['sbo'].get(h['num']); h['ext_kayo'] = raw['kayo'].get(h['num']); h['ext_knavi'] = raw['knavi'].get(h['num'])
-                ds = [devs[k].get(h['num']) for k in devs if devs[k].get(h['num']) is not None]
-                h['ext'] = round(sum(ds) / len(ds), 1) if ds else None
-                h['ext_n'] = len(ds)
-                sk = [devs[k].get(h['num']) for k in ('sbo', 'kayo') if devs[k].get(h['num']) is not None]
-                h['_sk'] = sum(sk) / len(sk) if sk else None  # 合成指数用（過去分がある2サイトだけ）
+                # 外部指数＝水分ボンバー0.2・かよちん0.8 の重みつき平均（EW 2026-11-22：テスト期間13/13か月・14/14場で今までの半々より良い）。
+                # 競馬ナビは過去分が無く重みを決められないので平均には入れず、ナの列に生の値だけ出す
+                w = wext(devs['sbo'].get(h['num']), devs['kayo'].get(h['num']))
+                h['ext'] = round(w, 1) if w is not None else None
+                h['ext_n'] = sum(devs[k].get(h['num']) is not None for k in ('sbo', 'kayo'))
+                h['_sk'] = w  # 合成指数用
             rr['has_ext'] = any(h.get('ext') is not None for h in rr['runners'])
-        out['notes']['chiho_ext'] = f'外部指数：水分ボンバー {len(sbo)}R・かよちん {len(kayo)}R・競馬ナビ {sum(1 for v in knavi.values() if v)}R' + ('（取得できず：' + '／'.join(ext_err) + '）' if ext_err else '')
+        out['notes']['chiho_ext'] = f'外部指数＝水分ボンバー2割・かよちん8割（テスト期間で半々より良かった重み。競馬ナビは過去分が無いので混ぜずナの列だけ）：水分ボンバー {len(sbo)}R・かよちん {len(kayo)}R・競馬ナビ {sum(1 for v in knavi.values() if v)}R' + ('（取得できず：' + '／'.join(ext_err) + '）' if ext_err else '')
     except Exception as e:  # noqa
         out['notes']['chiho_ext'] = '外部指数を取得できず：' + str(e)[:100].replace('<', '').replace('>', '')
-    # 合成指数：HORSE指数の要素＋外部指数（水分ボンバー・かよちんのレース内偏差値の平均）で学習し直したもの。
-    # 2026-11-20 検証：テスト期間の3着以内 AUC 0.794→0.810。外部指数がオッズを使っているかは不明なので HORSE指数とは別の列にする
+    # 合成指数：HORSE指数の要素＋外部指数（水分ボンバー0.2・かよちん0.8 のレース内偏差値の重みつき平均）で学習し直したもの。
+    # 2026-11-20 検証：テスト期間の3着以内 AUC 0.794→0.810（2026-11-22 重みを水分ボンバー0.2・かよちん0.8 に変えて 0.8145、13/13か月で良化）。外部指数がオッズを使っているかは不明なので HORSE指数とは別の列にする
     try:
         def _dev(vals):
             xs = [v for v in vals.values() if v is not None]
@@ -250,11 +253,11 @@ try:
             e = exth.get((r['date'], r['place'], r['rno']))
             if not e:
                 continue
-            ds = [_dev(e[k]) for k in ('sbo', 'kayo') if e.get(k)]
+            dsb, dky = (_dev(e['sbo']) if e.get('sbo') else {}), (_dev(e['kayo']) if e.get('kayo') else {})
             for h in r['runners']:
-                vs = [d[h['num']] for d in ds if h.get('num') in d]
-                if vs:
-                    sk[(r['id'], h['num'])] = sum(vs) / len(vs)
+                a_, b_ = dsb.get(h.get('num')), dky.get(h.get('num'))
+                if a_ is not None or b_ is not None:
+                    sk[(r['id'], h['num'])] = 0.2 * a_ + 0.8 * b_ if a_ is not None and b_ is not None else (b_ if b_ is not None else a_)
         for rr in races:
             for h in rr['runners']:
                 if h.get('_sk') is not None:
