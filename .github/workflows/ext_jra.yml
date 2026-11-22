@@ -26,7 +26,7 @@ jobs:
       - if: always()
         run: |
           mkdir -p an && cp ext_jra.txt an/ 2>/dev/null || true
-          git fetch -q origin analysis && for f in venue_time ext_compare pm_check pm_tune pm_jra jra_model bias_jra bias_nar; do git show origin/analysis:$f.txt > an/$f.txt 2>/dev/null || true; done
+          git fetch -q origin analysis && for f in venue_time ext_compare pm_check pm_tune pm_jra jra_model bias_jra bias_nar ext_daily; do git show origin/analysis:$f.txt > an/$f.txt 2>/dev/null || true; done
           cd an && git init -q && git checkout -q -b analysis
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m a
