@@ -422,6 +422,21 @@ try:
                     h['score'] = round(float(v[0]), 1) if v else None
                     h['p_place'] = round(float(v[1]), 3) if v else None
                     nj += v is not None
+            # JRAで走ったことがない馬（海外から来た馬・地方からの転入馬）は、HORSE・SP・合成の材料がほとんど無いので目印をつける（2026-11-22 オーナー指定）
+            hj = {h.get('horse_id') for r in histj for h in r['runners'] if h.get('horse_id')}
+            JP, NP = set(jra.PLACES.values()), set(nk.NAR_PLACES.values())
+            for rr in races:
+                d = cards.get(rr['id']) or {}
+                for x in d.get('runners') or []:
+                    if not x.get('past') or x.get('horse_id') in hj:
+                        continue
+                    rcs = [re.sub(r'\s', '', p.get('rc') or '') for p in x['past']]
+                    if any(any(j in c for j in JP) for c in rcs):
+                        continue
+                    lab = '地方' if any(any(n in c for n in NP) for c in rcs) else '海外'
+                    for h in rr['runners']:
+                        if h['num'] == x['num']:
+                            h['noj'] = lab; h['noj_rc'] = '・'.join(dict.fromkeys(c for c in rcs if c))[:40]
             # 合成（中央）：HORSE＋デイリー うま屋のスピード指数（SP）と本紙の印（DY 2026-11-22：テスト2026年 3着以内AUC 0.773→0.788、11/11か月で良化）
             try:
                 from keiba import daily
