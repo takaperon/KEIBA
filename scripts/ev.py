@@ -129,3 +129,20 @@ for pc, pn in (('p_h', 'HORSE'), ('p_s', '合成')):
     P(line(f'{pn} EV≥{e}・{o}倍以下（2分前で選ぶ）', a))
     P(line(f'{pn} 同じ基準（確定で選ぶ・比べ）', b))
 P(f'  何も絞らない単勝（同じ期間）：{f2.ret.sum() / (100 * len(f2)):.0%}（{len(f2)}頭）')
+
+# ---------- EV-4 市場と指数を混ぜた勝率で EV を出す（Benter 型）。重みは検証期間、確かめはテスト期間 ----------
+from sklearn.linear_model import LogisticRegression
+P('\n[EV-4] 市場の勝率と指数の勝率を混ぜて EV を出す（重みは検証期間で決め、テスト期間で確かめる。どちらも確定オッズ＝参考）')
+for d in (df,):
+    q = 1 / d.tan; d['p_m'] = q / q.groupby(d.race).transform('sum')
+va, te = df[df.split2 == 'valid'], df[df.split2 == 'test']
+for pc, pn in (('p_h', 'HORSE'), ('p_s', '合成')):
+    X = lambda d: np.c_[np.log(d.p_m.clip(1e-4)), np.log(d[pc].clip(1e-4))]
+    lr = LogisticRegression(C=10, max_iter=1000).fit(X(va), va.win)
+    for d in (va, te):
+        z = lr.decision_function(X(d)); e = pd.Series(np.exp(z), index=d.index)
+        d['p_b'] = e / e.groupby(d.race).transform('sum')
+    P(f'  {pn}：重み 市場 {lr.coef_[0][0]:+.2f}・指数 {lr.coef_[0][1]:+.2f}')
+    for e_, o_ in ((1.05, 10), (1.1, 10), (1.1, 20), (1.2, 20), (1.3, 20), (1.2, 50)):
+        a = sel(va, 'p_b', 'tan', e_, o_); b = stat(sel(te, 'p_b', 'tan', e_, o_))
+        P(f'    EV≥{e_}・{o_}倍以下：検証 {a.ret.sum() / (100 * max(1, len(a))):.0%}（{len(a)}頭）｜テスト ' + (line('', b).strip() if b else '該当なし'))
