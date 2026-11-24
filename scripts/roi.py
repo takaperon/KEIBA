@@ -204,3 +204,24 @@ for nm, R in (('HORSE', RH), ('合成', RS)):
     P(f'\n[RO] 3連複 上位3頭の血統◎軸・相手5頭（{nm}）月ごと：' + '  '.join(f'{k} {v[2]}R {v[1] / v[0]:.0%}' for k, v in sorted(mo.items())))
     big = sorted((p for _, _, p in recs), reverse=True)[:5]
     P(f'  払戻の大きい順（100円あたり）：{", ".join(f"{int(x):,}円" for x in big)}')
+
+# ---- 場ごとの成績（2026-11-24 オーナー「地方で一番成績のいいところはどこ？」）----
+from sklearn.metrics import roc_auc_score
+PN = {r['id']: (r.get('place_name') or r['place']) for r in races}
+te['pn'] = te.race.map(PN)
+te['fk'] = [PAY[a]['複勝'].get((int(b),), 0) if t else 0 for a, b, t in zip(te.race, te.num, te.top3)]
+te['tw'] = [PAY[a]['単勝'].get((int(b),), 0) if w else 0 for a, b, w in zip(te.race, te.num, te.win)]
+P('\n[RO-場] 場ごと（テスト期間）：3着以内AUC、指数1位の 勝率・3着内率・単勝回収・複勝回収（HORSE ｜ 合成 ｜ 1番人気）')
+rows = []
+for pn, g in te.groupby('pn'):
+    if g.race.nunique() < 150:
+        continue
+    o = [pn, g.race.nunique()]
+    for c in ('h', 's2', 'mkt'):
+        x = g[g[c].notna()]
+        t = x.sort_values(c, ascending=False).groupby('race').head(1)
+        o += [roc_auc_score(x.top3, x[c]), t.win.mean(), t.top3.mean(), t.tw.sum() / (100 * len(t)), t.fk.sum() / (100 * len(t))]
+    rows.append(o)
+rows.sort(key=lambda r: -r[2])
+for o in rows:
+    P(f'  {o[0]:<5} {o[1]:>5}R  HORSE AUC {o[2]:.3f} 1位 勝{o[3]:5.1%} 3内{o[4]:5.1%} 単{o[5]:4.0%} 複{o[6]:4.0%} ｜ 合成 AUC {o[7]:.3f} 勝{o[8]:5.1%} 3内{o[9]:5.1%} 単{o[10]:4.0%} 複{o[11]:4.0%} ｜ 人気 AUC {o[12]:.3f} 単{o[15]:4.0%} 複{o[16]:4.0%}')
