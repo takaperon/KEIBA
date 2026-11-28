@@ -26,6 +26,11 @@ jobs:
           path: peddata
           key: ped-data-${{ github.run_id }}
           restore-keys: ped-data-
+      - uses: actions/cache/restore@v4
+        with:
+          path: bandata
+          key: banei-data-none
+          restore-keys: banei-data-
       - run: git fetch -q origin data && mkdir -p jradata && git --work-tree=jradata checkout origin/data -- races && git reset -q
       - run: pip install -q beautifulsoup4 lxml
       - name: collect (JST 21:30〜翌7:30 の間だけ。定時実行が遅れて昼にずれ込んだら、レースのデータ取得と重ならないよう止める)
@@ -42,6 +47,25 @@ jobs:
           echo "使える時間 $M 分"
           if [ "$M" -lt 20 ]; then echo "昼間なので取らない"; exit 0; fi
           python3 scripts/backfill_ped.py --max-minutes $M --interval 10 --max-pages 1500 2>&1 | tail -40
+      - name: ばんえいの過去分（BN-1、2026-11-28〜。血統を取り終えた残りの時間で。3秒間隔・拒否されたら止める）
+        if: always()
+        run: |
+          M=$(python3 -c "
+          import datetime as d
+          n=d.datetime.utcnow()+d.timedelta(hours=9)
+          end=n.replace(hour=7,minute=30,second=0)
+          if n.hour>=8 and (n.hour,n.minute)<(21,30): print(0)
+          else:
+            end = end if n<end else end+d.timedelta(days=1)
+            print(min(300,int((end-n).total_seconds()/60)))")
+          echo "使える時間 $M 分"
+          if [ "$M" -lt 15 ] || [ -f bandata/DONE ] || [ -f bandata/STOPPED ]; then echo "取らない"; exit 0; fi
+          python3 scripts/backfill_nar.py --data bandata --only-banei --max-minutes $M 2>&1 | tail -5
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: bandata
+          key: banei-data-${{ github.run_id }}-${{ github.run_attempt }}
       - uses: actions/cache/save@v4
         if: always()
         with:
@@ -51,6 +75,11 @@ jobs:
         if: always()
         run: |
           mkdir -p ps && python3 -c "import json;s=json.load(open('peddata/state.json'));s.pop('empty',None);json.dump(s,open('ps/state.json','w'))" || echo '{}' > ps/state.json
+          python3 -c "
+          import json,os,gzip
+          s=json.load(open('bandata/state.json')) if os.path.exists('bandata/state.json') else {}
+          n=sum(sum(1 for _ in gzip.open('bandata/races/'+f,'rt')) for f in os.listdir('bandata/races')) if os.path.isdir('bandata/races') else 0
+          json.dump({'races':n,'dates_done':len(s.get('dates_done',[])),'oldest':min(s.get('dates_done') or ['-']),'errors':len(s.get('errors',[])),'done':os.path.exists('bandata/DONE'),'stopped':open('bandata/STOPPED').read() if os.path.exists('bandata/STOPPED') else None},open('ps/banei.json','w'))" || true
           cd ps && git init -q && git checkout -q -b ped-status
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com add -A
           git -c user.name=keiba-bot -c user.email=keiba-bot@users.noreply.github.com commit -q -m s

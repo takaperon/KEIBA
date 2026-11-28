@@ -18,6 +18,7 @@ def main():
     ap.add_argument('--sleep', type=float, default=3.0)
     ap.add_argument('--max-minutes', type=float, default=320)
     ap.add_argument('--skip-banei', action='store_true', default=True)
+    ap.add_argument('--only-banei', action='store_true', default=False)  # BN-1：ばんえいだけ（別のデータ置き場に）
     a = ap.parse_args()
     os.makedirs(f'{a.data}/races', exist_ok=True)
     sp = f'{a.data}/state.json'
@@ -36,7 +37,7 @@ def main():
                     return nk.decode(r.read())
             except Exception as e:  # noqa
                 err = e
-                if '403' in str(e) or '429' in str(e):
+                if '403' in str(e) or '429' in str(e) or '503' in str(e):
                     raise RuntimeError(f'blocked {e}')  # 拒否されたら即やめる
                 time.sleep(10 * (i + 1))
         raise RuntimeError(str(err)[:200])
@@ -64,7 +65,7 @@ def main():
             if ds in done_dates:
                 continue
             ids = [r for r in nk.race_ids(get(f'{D}/race/list/{ds}/'))
-                   if r[4:6] in nk.NAR_PLACES and not (a.skip_banei and r[4:6] == '65') and r[:4] + r[6:10] == ds]
+                   if r[4:6] in nk.NAR_PLACES and ((r[4:6] == '65') if a.only_banei else not (a.skip_banei and r[4:6] == '65')) and r[:4] + r[6:10] == ds]
             fn = f'{a.data}/races/{ds[:6]}.jsonl.gz'
             have = set()
             if os.path.exists(fn):

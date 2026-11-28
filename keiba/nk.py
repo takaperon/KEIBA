@@ -42,6 +42,9 @@ def parse_race(html: str, rid: str) -> dict:
     m = re.search(r'天候\s*:\s*(\S+)', t); d['weather'] = m.group(1) if m else None
     m = re.search(r'(?:ダート|芝)\s*:\s*(\S+)', t); d['going'] = m.group(1) if m else None
     m = re.search(r'発走\s*:\s*(\d+:\d+)', t); d['post_time'] = m.group(1) if m else None
+    m = re.search(r'水分量\s*[:：]\s*([\d.]+)', t); d['moisture'] = float(m.group(1)) if m else None  # ばんえい
+    if d['place'] == '65':
+        d['surface'] = d['surface'] or '直'; d['distance'] = d['distance'] or 200
     st = s.find('p', class_='smalltxt')
     d['meta'] = st.get_text(' ', strip=True) if st else None
     rows = []
@@ -103,6 +106,9 @@ def parse_shutuba(html: str, rid: str) -> dict:
     m = re.search(r'(\d{1,2}:\d{2})発走', t1); d['post_time'] = m.group(1) if m else None
     m = re.search(r'(芝|ダ|障)(\d+)m', t1); d['surface'] = m.group(1) if m else None; d['distance'] = int(m.group(2)) if m else None
     m = re.search(r'天候\s*:\s*(\S+)', t1); d['weather'] = m.group(1) if m else None
+    m = re.search(r'水分量\s*[:：]\s*([\d.]+)', t1); d['moisture'] = float(m.group(1)) if m else None  # ばんえい
+    if d['place'] == '65':
+        d['surface'] = d['surface'] or '直'; d['distance'] = d['distance'] or 200
     m = re.search(r'馬場\s*:\s*(\S+)', t1); d['going'] = m.group(1).replace('&nbsp;', '') if m else None
     if d['going']:
         d['going'] = re.sub(r'[^良稍重不]', '', d['going']) or None
