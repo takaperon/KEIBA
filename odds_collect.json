@@ -1,0 +1,59 @@
+{
+ "by_day": {
+  "20261117": {
+   "snapshots": 162,
+   "races": 28
+  },
+  "20261118": {
+   "snapshots": 129,
+   "races": 18
+  },
+  "20261119": {
+   "snapshots": 178,
+   "races": 24
+  },
+  "20261120": {
+   "snapshots": 183,
+   "races": 25
+  },
+  "20261121": {
+   "snapshots": 184,
+   "races": 23
+  },
+  "20261122": {
+   "snapshots": 268,
+   "races": 34
+  },
+  "20261123": {
+   "snapshots": 255,
+   "races": 33
+  },
+  "20261124": {
+   "snapshots": 288,
+   "races": 36
+  },
+  "20261125": {
+   "snapshots": 276,
+   "races": 35
+  },
+  "20261126": {
+   "snapshots": 384,
+   "races": 48
+  },
+  "20261127": {
+   "snapshots": 288,
+   "races": 36
+  },
+  "20261128": {
+   "snapshots": 192,
+   "races": 24
+  }
+ },
+ "last_run": {
+  "day": "20261128",
+  "races": 24,
+  "snapshots_this_run": 39,
+  "errors": 0,
+  "ended": "2026-11-28 21:00"
+ }
+}
