@@ -1,0 +1,23 @@
+11/23 のばんえいのレースID 12 ['202665112301', '202665112302', '202665112303']
+== parse_race {'id': '202665112310', 'date': '20261123', 'place': '65', 'place_name': '帯広(ば)', 'rno': 10, 'race_name': '高田記念', 'surface': None, 'distance': None, 'weather': '曇', 'going': None, 'post_time': '19:05', 'meta': '2026年11月23日 17回帯広(ば)3日目\xa0670万円未満\xa0\xa0(規定)'}
+払戻の券種 ['単勝', '複勝', '枠連', '馬連', 'ワイド', '馬単', '三連複', '三連単']
+   {'pos': 1, 'pos_text': '1', 'waku': '8', 'num': 9, 'horse': 'タカシオ', 'horse_id': 'B202200176', 'sexage': '牡4', 'kg': 670.0, 'jockey': '大友一馬', 'jockey_id': 'B0070', 'time': '01:54.8', 'margin': None, 'corners': [4, 1, 1], 'last3f': 40.8, 'tan': 3.0, 'pop': 1, 'hw': 1080, 'hw_diff': -1, 'trainer': '[地] 大友栄人'}
+   {'pos': 2, 'pos_text': '2', 'waku': '2', 'num': 2, 'horse': 'キタサカエカイザー', 'horse_id': 'B202200051', 'sexage': '牡4', 'kg': 670.0, 'jockey': '今井千尋', 'jockey_id': 'B0068', 'time': '01:54.8', 'margin': '0.0', 'corners': [1, 2, 2], 'last3f': 36.8, 'tan': 3.6, 'pop': 2, 'hw': 1065, 'hw_diff': -1, 'trainer': '[地] 今井茂雅'}
+   {'pos': 3, 'pos_text': '3', 'waku': '5', 'num': 5, 'horse': 'ジェイマーシー', 'horse_id': 'B202000149', 'sexage': '牡6', 'kg': 680.0, 'jockey': '長澤幸太', 'jockey_id': 'B0056', 'time': '01:56.0', 'margin': '1.2', 'corners': [4, 2, 4], 'last3f': 35.0, 'tan': 9.0, 'pop': 6, 'hw': 1056, 'hw_diff': 13, 'trainer': '[地] 大河原和'}
+   {'pos': 4, 'pos_text': '4', 'waku': '3', 'num': 3, 'horse': 'ビッグシラヌイ', 'horse_id': 'B202100067', 'sexage': '牡5', 'kg': 680.0, 'jockey': '赤塚健仁', 'jockey_id': 'B0063', 'time': '01:56.7', 'margin': '1.9', 'corners': [4, 2, 5], 'last3f': 33.7, 'tan': 8.3, 'pop': 4, 'hw': 1049, 'hw_diff': -2, 'trainer': '[地] 林豊'}
+  文中 水分 12R 一覧 払戻し 10R 高田記念 直200m / 
+天候 : 曇 / 
+ 水分量 : 2.4 / 
+発走 : 19:05 過去の高田記念 2026年11月23日 17回帯広(ば)3日目 670万
+  文中 馬場  1 三連複 2-5-9 1,660 4 三連単 9-2-5 7,890 20 馬場情報 馬場指数 ( ? ) プレミアムサービスにご加入して頂くと 馬場指数 が確認できます。 プレミアムサービス案内
+  文中 ダ ログアウト LIVE 競輪 トップ ニュース レース A I 予想 UMAIビルダー コラム netkeibaTV 地方競馬 データベース ショップ 競馬新聞 俺プロ 一口馬主 POG まとめ イベン
+  文中 200m R 7R 8R 9R 10R 11R 12R 一覧 払戻し 10R 高田記念 直200m / 
+天候 : 曇 / 
+ 水分量 : 2.4 / 
+発走 : 19:05 過去の高田記念 2026年11月2
+  文中 障害 内へ トラックバイアス マスター レース翌週の金曜日18時頃に公開予定です。 ※障害レースを除く中央競馬のみが対象となります コーナー通過順位 ラップタイム 注目馬 レース後の短評 ( ? ) 着順:
+== parse_shutuba {'id': '202665112810', 'date': '20261128', 'place': '65', 'place_name': '帯広(ば)', 'rno': 10, 'payouts': {}, 'corner_text': {}, 'race_name': 'ひさアシ夢記念', 'post_time': '18:55', 'surface': None, 'distance': None, 'weather': '小雨', 'going': None, 'meta': '17回 帯広(ば) 4日目 混合３歳以上 10頭 本賞金:34.0、12.5、7.1、3.7、2.0万円'}
+   {'pos': None, 'pos_text': '', 'waku': '1', 'num': 1, 'horse': 'アアモンドオーザン', 'horse_id': 'B201900024', 'sexage': 'セ7', 'kg': 670.0, 'jockey': '大友一馬', 'jockey_id': None, 'time': None, 'margin': None, 'corners': [], 'last3f': None, 'tan': 5.7, 'pop': 2, 'hw': 1008, 'hw_diff': -6, 'trainer': 'ばんえい 大友栄人'}
+   {'pos': None, 'pos_text': '', 'waku': '2', 'num': 2, 'horse': 'クニキヨタイショウ', 'horse_id': 'B202100161', 'sexage': 'セ5', 'kg': 670.0, 'jockey': '菊池一樹', 'jockey_id': None, 'time': None, 'margin': None, 'corners': [], 'last3f': None, 'tan': None, 'pop': 9, 'hw': 1127, 'hw_diff': -6, 'trainer': 'ばんえい 鈴木邦哉'}
+   {'pos': None, 'pos_text': '', 'waku': '3', 'num': 3, 'horse': 'サカノキンザン', 'horse_id': 'B201800278', 'sexage': '牡8', 'kg': 670.0, 'jockey': '村上章', 'jockey_id': None, 'time': None, 'margin': None, 'corners': [], 'last3f': None, 'tan': None, 'pop': 8, 'hw': 1066, 'hw_diff': -8, 'trainer': 'ばんえい 田上忠夫'}
+  出馬表の水分  7R 8R 9R 10R 11R 12R 10R ひさアシ夢記念 18:55発走 / 直200m / 天候:小雨 / 水分量:3.5 17回 帯広(ば) 4日目 混合３歳以上 10頭 本賞金:34.

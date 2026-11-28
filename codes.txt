@@ -1,0 +1,4 @@
+list 200
+race 200
+shutuba 200
+nar_result 200
